@@ -1,0 +1,1 @@
+wget -qO- -U "Mozilla/6.0 (Macintosh; I; Intel Mac OS X 11_7_9; de-LI; rv:1.9b4) Gecko/2012010317 Firefox/10.0a4" http://www.google.com/search\?q\=$@\&tbs\=dfn:1 | grep --perl-regexp --only-matching '(?<=<li style="list-style:none">)[^<]+' | nl | perl -MHTML::Entities -pe 'decode_entities($_)'
