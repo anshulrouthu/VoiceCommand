@@ -3,3 +3,6 @@
 bin/
 .cproject
 .project
+*.flac
+*.wav
+*.dat

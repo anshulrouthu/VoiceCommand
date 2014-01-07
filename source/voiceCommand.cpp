@@ -55,17 +55,17 @@ inline float getVolume(string recordHW, string com_duration, bool nullout) {
 
 int main(int argc, char* argv[]) {
 
-	const char* lang = "en-US";
+	//const char* lang = "en-US";
 	const char* duration = "1";
-	struct sprec_wav_header *hdr;
-	struct sprec_server_response *resp;
-	char *flac_file_buf;
-	int flac_file_len;
+	//struct sprec_wav_header *hdr;
+	//struct sprec_server_response *resp;
+	//char *flac_file_buf;
+	//int flac_file_len;
 	char *text="0000";
 	char message[1024];
 	message[0]='0';
-	double confidence;
-	int err;
+	//double confidence;
+	//int err;
 	bool active = 0;
 	FILE* cmd=NULL;
 	float vol=0.0f;
@@ -203,7 +203,7 @@ string exec(string cmd) {
 }
 int searchQuery(const char* q) {
 	CURLcode cr;
-	int debug;
+	int debug=1;
 	curlInit();
 	//technically this should never happen now.
 	if (!hcurl) {

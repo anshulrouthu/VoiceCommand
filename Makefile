@@ -2,24 +2,37 @@
 CC=g++ 
 CFLAGS=-Wall
 TARGET=voiceCommand
-SRC=./src
+SRC=./source
+SAMPLES=./samples/*.cpp
 BIN=bin
 INCLUDE=
-LIBS= -ljson_spirit -lcurl -lboost_regex
+LIBS= -ljson_spirit -lcurl -lboost_regex -lasound -lopenal -lFLAC
 TMP=tmp
 
+SRCS=$(wildcard ./samples/*.c)
+OBJS=$(SRCS:.c=.o)
+
 .PHONY: all
-all: $(TARGET)
+all: $(TARGET) sample
 	@cp $(SRC)/scripts/* $(BIN)/
 	@echo "Build successful"
 
-$(TARGET):$(TARGET).o
+#$(TARGET):$(TARGET).o
+#		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+
+$(TARGET): $(patsubst %.cpp, %.o, $(wildcard source/*.cpp))
 		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
- 
-$(TARGET).o: $(SRC)/$(TARGET).cpp
-			$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: sample
+sample: sample-record
+
+sample-record:samples/sample-record.o
+	          $(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
 	 @echo "Cleaning files..."
-	 @rm -f *.o
+	 @rm -f source/*.o samples/*.o
