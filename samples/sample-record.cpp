@@ -5,11 +5,12 @@ static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 b
 #define READSIZE 2048
 
 static unsigned total_samples = 0; /* can use a 32-bit number due to WAVE size limitations */
-static FLAC__byte buffer[READSIZE/*samples*/ * 2/*bytes_per_sample*/ * 2/*channels*/]; /* we read the WAVE data into here */
+static FLAC__byte* buffer;//[READSIZE/*samples*/ * 2/*bytes_per_sample*/ * 2/*channels*/]; /* we read the WAVE data into here */
 static FLAC__int32 pcm[READSIZE/*samples*/ * 2/*channels*/];
 
 int main(void)
 {
+    Timer t;
     /*
      * flac data
      */
@@ -25,11 +26,10 @@ int main(void)
 //flac data end
 
     const ALCchar * devices;
-    const ALCchar * ptr;
     ALCdevice * mainDev;
     ALCcontext * mainContext;
     ALCdevice * captureDev;
-    ALshort * captureBuffer=(ALshort*)malloc(1048576);
+    void * captureBuffer=(void*)malloc(1048576);
     ALshort *captureBufPtr;
     ALint samplesAvailable;
     ALint samplesCaptured;
@@ -119,11 +119,14 @@ int main(void)
 // Capture (roughly) five seconds of audio
     alcCaptureStart(captureDev);
     samplesCaptured = 0;
-    captureBufPtr = captureBuffer;
+    captureBufPtr = (ALshort*)captureBuffer;
     int sum=0,j;
     ALshort* tmp;
+    t.StartTimer();
     while (!kbhit())
     {
+        //t.StartTimer();
+        printf("seconds passed: %d\n",t.GetTimePassed());
         // Get the number of samples available
         alcGetIntegerv(captureDev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
 
@@ -142,8 +145,8 @@ int main(void)
         if(j/100)
         {
             fflush(stdout);
-            if(sum)
-                printf("amplitude:%d\n",sum/j);
+            //if(sum)
+                //printf("amplitude:%d\n",sum/j);
             tmp = captureBufPtr;
             sum = 0;
             j=0;
@@ -151,8 +154,8 @@ int main(void)
         sum+=abs((int)*tmp++);
         j++;
 
-        if(sum/j>1000)
-            break;
+        //if(sum/j>1000)
+            //break;
         // Wait for a bit
         //usleep(10000);
 
@@ -170,11 +173,11 @@ int main(void)
 // Generate an OpenAL buffer for the captured data
     alGenBuffers(1, &buf);
     alGenSources(1, &source);
-    alBufferData(buf, AL_FORMAT_STEREO16, captureBuffer, samplesCaptured * 2, 16000);
+    alBufferData(buf, AL_FORMAT_STEREO16,(ALshort*)captureBuffer, samplesCaptured * 2, 16000);
     alSourcei(source, AL_BUFFER, buf);
     alSourcePlay(source);
 
-    writeWAVData("audio.wav",captureBuffer,samplesCaptured * 2, 16000, 2 );
+    writeWAVData("audio.wav",(ALshort*)captureBuffer,samplesCaptured * 2, 16000, 2 );
 
     printf("samplescaptured: %d \n",samplesCaptured);
 
@@ -183,21 +186,10 @@ int main(void)
         return 1;
     }
 
-    /* read wav header and validate it */
-    if(
-        fread(buffer, 1, 44, fin) != 44 ||
-        memcmp(buffer, "RIFF", 4) ||
-        memcmp(buffer+8, "WAVEfmt \020\000\000\000\001\000\002\000", 16) ||
-        memcmp(buffer+32, "\004\000\020\000data", 8)
-    ) {
-        fprintf(stderr, "ERROR: invalid/unsupported WAVE file, only 16bps stereo WAVE in canonical form allowed\n");
-        fclose(fin);
-        return 1;
-    }
-    sample_rate = ((((((unsigned)buffer[27] << 8) | buffer[26]) << 8) | buffer[25]) << 8) | buffer[24];
+    sample_rate = 16000;
     channels = 2;
     bps = 16;
-    total_samples = (((((((unsigned)buffer[43] << 8) | buffer[42]) << 8) | buffer[41]) << 8) | buffer[40]) / 4;
+    total_samples = samplesCaptured;
 
     printf("sample_rate: %d %d\n",sample_rate,total_samples);
 
@@ -246,15 +238,11 @@ int main(void)
 
     /* read blocks of samples from WAVE file and feed to encoder */
     if(ok) {
+        buffer = (FLAC__byte*)captureBuffer;
         size_t left = (size_t)total_samples;
         while(ok && left) {
             size_t need = (left>READSIZE? (size_t)READSIZE : (size_t)left);
-            memcpy(buffer,captureBuffer,need*4);
-            if(0){//fread(buffer, channels*(bps/8), need, fin) != need) {
-                fprintf(stderr, "ERROR: reading from WAVE file\n");
-                ok = false;
-            }
-            else {
+            {
                 /* convert the packed little-endian 16-bit PCM samples from WAVE into an interleaved FLAC__int32 buffer for libFLAC */
                 size_t i;
                 for(i = 0; i < need*channels; i++) {
@@ -266,7 +254,7 @@ int main(void)
             }
 
             left -= need;
-            captureBuffer+=need*2;
+            buffer+=need*4;
         }
 
     }

@@ -1,0 +1,40 @@
+/*
+ * worker.cpp
+ *
+ *  Created on: Oct 4, 2013
+ *      Author: anshul
+ */
+
+#include "worker.h"
+
+#ifndef WorkerThread_CPP_
+#define WorkerThread_CPP_
+
+
+WorkerThread::WorkerThread():m_state(false),m_handle(NULL)
+{
+
+}
+WorkerThread::~WorkerThread()
+{
+}
+
+void WorkerThread::start()
+{
+    m_state = true;
+    int t = pthread_create(&m_handle,NULL,&WorkerThread::taskLauncher,(void*)this);
+}
+
+void* WorkerThread::taskLauncher(void* p)
+{
+    WorkerThread* c = static_cast<WorkerThread*>(p);
+    c->Task();
+    return (NULL);
+}
+void WorkerThread::join()
+{
+    m_state = false;
+    pthread_join(m_handle,NULL);
+}
+
+#endif /* WorkerThread_CPP_ */

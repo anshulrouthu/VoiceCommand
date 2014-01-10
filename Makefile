@@ -8,29 +8,31 @@ BIN=bin
 INCLUDE=
 LIBS= -ljson_spirit -lcurl -lboost_regex -lasound -lopenal -lFLAC
 TMP=tmp
-
+INC= -Isource/
 SRCS=$(wildcard ./samples/*.c)
 OBJS=$(SRCS:.c=.o)
+MAINFILES:=source/voiceCommand.cpp samples/sample-record.cpp source/voiceCommand-old.cpp
+OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
 .PHONY: all
-all: $(TARGET) sample
+all: clean $(OBJS) $(TARGET) sample
 	@cp $(SRC)/scripts/* $(BIN)/
-	@echo "Build successful"
+	@echo "Build successful $(OBJS)"
 
 #$(TARGET):$(TARGET).o
 #		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
-$(TARGET): $(patsubst %.cpp, %.o, $(wildcard source/*.cpp))
+$(TARGET): $(OBJS) source/$(TARGET).o
 		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: sample
 sample: sample-record
 
-sample-record:samples/sample-record.o
+sample-record:samples/sample-record.o $(OBJS)
 	          $(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
 %.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 .PHONY: clean
 clean:
