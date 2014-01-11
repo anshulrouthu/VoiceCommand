@@ -22,6 +22,10 @@ public:
     int GetTimePassed();
 
 private:
+    virtual const char* c_str()
+    {
+        return ("Timer");
+    }
     virtual void Task();
     clock_t start_time;
     clock_t time_passed;

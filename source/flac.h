@@ -33,6 +33,10 @@ public:
     void deInit();
     void setParameters(int samples);
 private:
+    const char* c_str()
+    {
+        return ("WorkerThread");
+    }
     FLAC__bool ok;
     FLAC__StreamEncoder *encoder;
     FLAC__StreamEncoderInitStatus init_status;

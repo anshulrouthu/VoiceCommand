@@ -12,6 +12,8 @@
 
 int main()
 {
+    DBG_PRINT(DBG_ALWAYS,"hello debuging %s ","test");
+
     Timer* timer = new Timer();
     ALDevice* device= new ALDevice();
     FLACWrapper* flac = new FLACWrapper();
@@ -27,6 +29,8 @@ int main()
     writeWAVData("audio.wav", (ALshort*) device->getData(), device->getNoSamples() * 2, 16000, 2);
     flac->createFLAC(device->getData());
     delete flac;
+    delete device;
+    delete timer;
     return(0);
 }
 

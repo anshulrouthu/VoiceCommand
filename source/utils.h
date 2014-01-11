@@ -15,8 +15,51 @@
 #include <termios.h>
 #include <unistd.h>
 #include <sstream>
+#include <stdarg.h>
+static int g_dbglevel=0;
 
 int kbhit(void);
+
+/*
+ * Debugging code: helps us in easy debugging of the application
+ */
+class vcDebug
+{
+public:
+    vcDebug(int level);
+    int DebugPrint(const char* formatString, ...) __attribute__((__format__(printf, 2, 3)));
+
+private:
+    bool isDebugOn();
+    int m_level;
+};
+
+#define DBG_ALWAYS 0
+#define DBG_TRACE 1
+
+#define DBGPRINT(level,msg) vcDebug(level).DebugPrint msg
+
+#define DBG_PRINT(level, format, args...)  DBGPRINT(level, ("%-5d%s() - " format "\n", __LINE__, __FUNCTION__, ##args))
+
+//inorder to use the following debug function needs to implement c_str() function
+
+#define VC_DBG(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format "\n", __LINE__, c_str(), __FUNCTION__, ##args))
+#define VC_ERR(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
+#define VC_ALL(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
+#define VC_MSG(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
+
+
+#define VC_CHECK(condition, msg, args...)  \
+do                                      \
+{                                       \
+    if (condition)                      \
+    {                                   \
+        VC_ERR(msg,##args);             \
+    }                                   \
+} while (0)
+
+//debugging code end
+
 
 template <typename T>
 void write(std::ofstream& stream, const T& t) {
@@ -43,7 +86,5 @@ void writeWAVData(const char* outFile, SampleType* buf, size_t bufSize,
   stream.write((const char*)&bufSize, 4);
   stream.write((const char*)buf, bufSize);
 }
-
-
 
 #endif /* UTILS_H_ */

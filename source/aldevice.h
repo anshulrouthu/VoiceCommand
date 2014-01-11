@@ -33,6 +33,10 @@ public:
     int getNoSamples();
 
 private:
+    virtual const char*  c_str()
+    {
+        return ("ALDevice");
+    }
     virtual void Task();
     const ALCchar* devices;
     ALCdevice* mainDev;

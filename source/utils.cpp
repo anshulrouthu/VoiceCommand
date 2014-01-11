@@ -5,7 +5,7 @@
  *      Author: anshul
  */
 #include "utils.h"
-
+#include <stdarg.h>
 int kbhit(void) {
     struct timeval tv;
     fd_set rdfs;
@@ -21,4 +21,23 @@ int kbhit(void) {
 
 }
 
+vcDebug::vcDebug(int level):m_level(level)
+{
+}
 
+int vcDebug::DebugPrint(const char* formatString, ...)
+{
+    if (isDebugOn())
+    {
+        va_list argumentList;
+        va_start(argumentList, formatString);
+        vprintf(formatString, argumentList);
+        va_end(argumentList);
+    }
+
+}
+
+bool vcDebug::isDebugOn()
+{
+    return (m_level <= g_dbglevel);
+}
