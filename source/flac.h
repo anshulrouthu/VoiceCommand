@@ -15,13 +15,7 @@
 
 #include <fstream>
 
-
-static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
-
 #define READSIZE 2048
-
-static unsigned total_samples = 0; /* can use a 32-bit number due to WAVE size limitations */
-static FLAC__int32 pcm[READSIZE/*samples*/ * 2/*channels*/];
 
 class FLACWrapper
 {
@@ -33,6 +27,7 @@ public:
     void deInit();
     void setParameters(int samples);
 private:
+    static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
     const char* c_str()
     {
         return ("WorkerThread");
@@ -47,15 +42,8 @@ private:
     unsigned channels;
     unsigned bps;
     int total_samples;
+    FLAC__int32 pcm[READSIZE/*samples*/ * 2/*channels*/];
 
 };
-
-
-void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data)
-{
-    (void)encoder, (void)client_data;
-
-    fprintf(stderr, "wrote %llu bytes, %llu/%u samples, %u/%u frames\n", bytes_written, samples_written, total_samples, frames_written, total_frames_estimate);
-}
 
 #endif /* FLAC_H_ */

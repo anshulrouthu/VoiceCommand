@@ -16,7 +16,10 @@
 #include <unistd.h>
 #include <sstream>
 #include <stdarg.h>
-static int g_dbglevel=0;
+#include <getopt.h>
+
+static int g_dbglevel __attribute__ ((unused));
+
 
 int kbhit(void);
 
@@ -27,7 +30,7 @@ class vcDebug
 {
 public:
     vcDebug(int level);
-    int DebugPrint(const char* formatString, ...) __attribute__((__format__(printf, 2, 3)));
+    void DebugPrint(const char* formatString, ...) __attribute__((__format__(printf, 2, 3)));
 
 private:
     bool isDebugOn();
@@ -49,12 +52,13 @@ private:
 #define VC_MSG(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
 
 
-#define VC_CHECK(condition, msg, args...)  \
+#define VC_CHECK(condition, fail, msg, args...)  \
 do                                      \
 {                                       \
     if (condition)                      \
     {                                   \
         VC_ERR(msg,##args);             \
+        fail;                           \
     }                                   \
 } while (0)
 

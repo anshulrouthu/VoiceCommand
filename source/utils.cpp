@@ -6,6 +6,7 @@
  */
 #include "utils.h"
 #include <stdarg.h>
+
 int kbhit(void) {
     struct timeval tv;
     fd_set rdfs;
@@ -25,7 +26,7 @@ vcDebug::vcDebug(int level):m_level(level)
 {
 }
 
-int vcDebug::DebugPrint(const char* formatString, ...)
+void vcDebug::DebugPrint(const char* formatString, ...)
 {
     if (isDebugOn())
     {

@@ -9,20 +9,17 @@ INCLUDE=
 LIBS= -ljson_spirit -lcurl -lboost_regex -lasound -lopenal -lFLAC
 TMP=tmp
 INC= -Isource/
-SRCS=$(wildcard ./samples/*.c)
-OBJS=$(SRCS:.c=.o)
+
+#list of files containing main() function, to prevent conflicts while compiling
 MAINFILES:=source/voiceCommand.cpp samples/sample-record.cpp source/voiceCommand-old.cpp
 OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
 .PHONY: all
 all: clean $(OBJS) $(TARGET) sample
 	@cp $(SRC)/scripts/* $(BIN)/
-	@echo "Build successful $(OBJS)"
+	@echo "Build successful"
 
-#$(TARGET):$(TARGET).o
-#		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
-
-$(TARGET): $(OBJS) source/$(TARGET).o
+$(TARGET):source/$(TARGET).o $(OBJS) 
 		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: sample

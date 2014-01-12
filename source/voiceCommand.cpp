@@ -10,10 +10,22 @@
 #include "voiceCommand.h"
 #include "flac.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-    DBG_PRINT(DBG_ALWAYS,"hello debuging %s ","test");
+    int c;
+    while ((c = getopt (argc, argv, "?:d:")) != -1)
+    {
+        switch (c)
+        {
+        case 'd':
+            g_dbglevel = (int)strtol(optarg,NULL,0);
+            break;
+        default:
+            break;
+        }
+    }
 
+    DBG_PRINT(DBG_ALWAYS,"Debug Level %d",g_dbglevel);
     Timer* timer = new Timer();
     ALDevice* device= new ALDevice();
     FLACWrapper* flac = new FLACWrapper();

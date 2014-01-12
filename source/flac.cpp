@@ -19,8 +19,8 @@ FLACWrapper::~FLACWrapper()
 {
     ok &= FLAC__stream_encoder_finish(encoder);
 
-    fprintf(stderr, "encoding: %s\n", ok? "succeeded" : "FAILED");
-    fprintf(stderr, "   state: %s\n", FLAC__StreamEncoderStateString[FLAC__stream_encoder_get_state(encoder)]);
+    VC_ALL("encoding: %s\n", ok ? "succeeded" : "FAILED");
+    VC_ALL("state: %s\n", FLAC__StreamEncoderStateString[FLAC__stream_encoder_get_state(encoder)]);
 
     /* now that encoding is finished, the metadata can be freed */
     FLAC__metadata_object_delete(metadata[0]);
@@ -28,6 +28,7 @@ FLACWrapper::~FLACWrapper()
 
     FLAC__stream_encoder_delete(encoder);
 }
+
 void FLACWrapper::setParameters(int samples)
 {
     sample_rate = 16000;
@@ -35,11 +36,12 @@ void FLACWrapper::setParameters(int samples)
     bps = 16;
     total_samples = samples;
 
-    printf("sample_rate: %d %d\n",sample_rate,total_samples);
+    VC_ALL("sample_rate: %d %d\n", sample_rate, total_samples);
 
     /* allocate the encoder */
-    if((encoder = FLAC__stream_encoder_new()) == NULL) {
-        fprintf(stderr, "ERROR: allocating encoder\n");
+    if ((encoder = FLAC__stream_encoder_new()) == NULL)
+    {
+        VC_ALL("ERROR: allocating encoder\n");
         fclose(fin);
         return;
     }
@@ -52,17 +54,17 @@ void FLACWrapper::setParameters(int samples)
     ok &= FLAC__stream_encoder_set_total_samples_estimate(encoder, total_samples);
 
     /* now add some metadata; we'll add some tags and a padding block */
-    if(ok) {
-        if(
-            (metadata[0] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT)) == NULL ||
-            (metadata[1] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_PADDING)) == NULL ||
-            /* there are many tag (vorbiscomment) functions but these are convenient for this particular use: */
-            !FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ARTIST", "Some Artist") ||
-            !FLAC__metadata_object_vorbiscomment_append_comment(metadata[0], entry, /*copy=*/false) || /* copy=false: let metadata object take control of entry's allocated string */
-            !FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "YEAR", "1984") ||
-            !FLAC__metadata_object_vorbiscomment_append_comment(metadata[0], entry, /*copy=*/false)
-        ) {
-            fprintf(stderr, "ERROR: out of memory or tag error\n");
+    if (ok)
+    {
+        if ((metadata[0] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT)) == NULL || (metadata[1] =
+            FLAC__metadata_object_new(FLAC__METADATA_TYPE_PADDING)) == NULL ||
+        /* there are many tag (vorbiscomment) functions but these are convenient for this particular use: */
+        !FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ARTIST", "Some Artist")
+            || !FLAC__metadata_object_vorbiscomment_append_comment(metadata[0], entry, /*copy=*/false) || /* copy=false: let metadata object take control of entry's allocated string */
+            !FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "YEAR", "1984")
+            || !FLAC__metadata_object_vorbiscomment_append_comment(metadata[0], entry, /*copy=*/false))
+        {
+            VC_ALL("ERROR: out of memory or tag error\n");
             ok = false;
         }
 
@@ -72,10 +74,12 @@ void FLACWrapper::setParameters(int samples)
     }
 
     /* initialize encoder */
-    if(ok) {
-        init_status = FLAC__stream_encoder_init_file(encoder, "audio.flac", progress_callback, /*client_data=*/NULL);
-        if(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK) {
-            fprintf(stderr, "ERROR: initializing encoder: %s\n", FLAC__StreamEncoderInitStatusString[init_status]);
+    if (ok)
+    {
+        init_status = FLAC__stream_encoder_init_file(encoder, "audio.flac", FLACWrapper::progress_callback, /*client_data=*/NULL);
+        if (init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK)
+        {
+            VC_ALL("ERROR: initializing encoder: %s\n", FLAC__StreamEncoderInitStatusString[init_status]);
             ok = false;
         }
     }
@@ -85,26 +89,37 @@ void FLACWrapper::createFLAC(void* data)
 {
     /* read blocks of samples from WAVE file and feed to encoder */
     FLAC__byte* buffer;
-    if(ok) {
-        buffer = (FLAC__byte*)data;
-        size_t left = (size_t)total_samples;
-        while(ok && left) {
-            size_t need = (left>READSIZE? (size_t)READSIZE : (size_t)left);
+    if (ok)
+    {
+        buffer = (FLAC__byte*) data;
+        size_t left = (size_t) total_samples;
+        while (ok && left)
+        {
+            size_t need = (left > READSIZE ? (size_t) READSIZE : (size_t) left);
             {
                 /* convert the packed little-endian 16-bit PCM samples from WAVE into an interleaved FLAC__int32 buffer for libFLAC */
                 size_t i;
-                for(i = 0; i < need*channels; i++) {
+                for (i = 0; i < need * channels; i++)
+                {
                     /* inefficient but simple and works on big- or little-endian machines */
-                    pcm[i] = (FLAC__int32)(((FLAC__int16)(FLAC__int8)buffer[2*i+1] << 8) | (FLAC__int16)buffer[2*i]);
+                    pcm[i] = (FLAC__int32) (((FLAC__int16) (FLAC__int8) buffer[2 * i + 1] << 8)
+                        | (FLAC__int16) buffer[2 * i]);
                 }
                 /* feed samples to encoder */
                 ok = FLAC__stream_encoder_process_interleaved(encoder, pcm, need);
             }
 
             left -= need;
-            buffer+=need*4;
+            buffer += need * 4;
         }
 
     }
+}
+
+void FLACWrapper::progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data)
+{
+    (void)encoder, (void)client_data;
+
+    fprintf(stderr, "wrote %llu bytes, %llu samples, %u/%u frames\n", bytes_written, samples_written, frames_written, total_frames_estimate);
 }
 
