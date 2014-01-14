@@ -18,40 +18,40 @@
 #include <fstream>
 #include "worker.h"
 
+#define SAMPLE_RATE 16000
+#define NO_OF_CHANNELS 2
+
 class ALDevice: public WorkerThread
 {
 public:
     ALDevice();
     virtual ~ALDevice();
-    void init();
-    void startCapture();
-    void stopCapture();
-    void* getData();
-    void createWAV();
+    VC_STATUS Init();
+    VC_STATUS CreateWAV();
+    void* GetData();
     void CreateFLAC();
-    void playAudio();
-    int getNoSamples();
+    void PlayAudio();
+    int GetNoSamples();
+    void StartCapture();
+    void StopCapture();
+    VC_STATUS GetCaptureDeviceList();
 
 private:
     virtual const char*  c_str()
     {
         return ("ALDevice");
     }
+    VC_STATUS OpenPlaybackDevice();
+    VC_STATUS OpenCaptureDevice();
+    const char* GetCaptureDevice();
+    const char* GetPlaybackDevice();
     virtual void Task();
-    const ALCchar* devices;
-    ALCdevice* mainDev;
-    ALCcontext* mainContext;
-    ALCdevice* captureDev;
-    void* captureBuffer;
-    ALshort*captureBufPtr;
-    ALint samplesAvailable;
-    ALint samplesCaptured;
-    time_t currentTime;
-    time_t lastTime;
+    ALCdevice* m_playbackdev;
+    ALCdevice* m_capturedev;
+    void* m_captureBuffer;
+    ALint m_samplescaptured;
     ALuint buf;
     ALuint source;
-    ALint playState;
-    int i;
     bool m_running;
 
 };

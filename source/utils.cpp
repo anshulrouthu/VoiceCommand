@@ -7,6 +7,14 @@
 #include "utils.h"
 #include <stdarg.h>
 
+static int g_dbglevel __attribute__ ((unused));
+
+void DebugSetLevel(int level)
+{
+    g_dbglevel = level;
+    DBG_PRINT(DBG_ALWAYS,"Debug Level %d",g_dbglevel);
+}
+
 int kbhit(void) {
     struct timeval tv;
     fd_set rdfs;
@@ -42,3 +50,4 @@ bool vcDebug::isDebugOn()
 {
     return (m_level <= g_dbglevel);
 }
+

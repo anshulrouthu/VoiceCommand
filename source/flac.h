@@ -12,37 +12,30 @@
 #include <ctime>
 #include "FLAC/metadata.h"
 #include "FLAC/stream_encoder.h"
-
 #include <fstream>
 
 #define READSIZE 2048
+#define SAMPLE_RATE 16000
+#define NO_OF_CHANNELS 2
 
 class FLACWrapper
 {
 public:
     FLACWrapper(){};
     ~FLACWrapper();
-    void init();
-    void createFLAC(void* data);
-    void deInit();
-    void setParameters(int samples);
+    VC_STATUS init();
+    VC_STATUS createFLAC(void* data, int total_samples);
+    VC_STATUS setParameters(int samples);
 private:
     static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
     const char* c_str()
     {
-        return ("WorkerThread");
+        return ("FLACWrapper");
     }
-    FLAC__bool ok;
-    FLAC__StreamEncoder *encoder;
-    FLAC__StreamEncoderInitStatus init_status;
-    FLAC__StreamMetadata *metadata[2];
-    FLAC__StreamMetadata_VorbisComment_Entry entry;
-    FILE *fin;
-    unsigned sample_rate;
-    unsigned channels;
+
+    FLAC__StreamEncoder* m_encoder;
+    FLAC__StreamMetadata* m_metadata[2];
     unsigned bps;
-    int total_samples;
-    FLAC__int32 pcm[READSIZE/*samples*/ * 2/*channels*/];
 
 };
 

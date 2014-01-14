@@ -17,10 +17,9 @@
 #include <sstream>
 #include <stdarg.h>
 #include <getopt.h>
+#include <string.h>
 
-static int g_dbglevel __attribute__ ((unused));
-
-
+void DebugSetLevel(int level);
 int kbhit(void);
 
 /*
@@ -47,9 +46,11 @@ private:
 //inorder to use the following debug function needs to implement c_str() function
 
 #define VC_DBG(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format "\n", __LINE__, c_str(), __FUNCTION__, ##args))
-#define VC_ERR(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
+#define VC_DBG_ERR(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format " in %s\n", __LINE__, c_str(), __FUNCTION__, ##args, __FILE__))
+#define VC_ERR(format, args...)  VC_DBG_ERR(DBG_ALWAYS,  format, ##args)
 #define VC_ALL(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
 #define VC_MSG(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
+#define VC_TRACE(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
 
 
 #define VC_CHECK(condition, fail, msg, args...)  \
@@ -64,6 +65,13 @@ do                                      \
 
 //debugging code end
 
+typedef enum
+{
+    VC_FAILURE=0,
+    VC_SUCCESS,
+    VC_NOT_IMPLEMENTED,
+    VC_UNDEFINED
+}VC_STATUS;
 
 template <typename T>
 void write(std::ofstream& stream, const T& t) {

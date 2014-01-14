@@ -23,7 +23,7 @@ void WorkerThread::start()
 {
     m_state = true;
     int t = pthread_create(&m_handle,NULL,&WorkerThread::taskLauncher,(void*)this);
-    VC_CHECK(t!=0, exit(1),"Failed to create thread: error: %d",t);
+    VC_CHECK(t!=0,exit(1),"Failed to create thread (error: %d)",t);
 
 }
 

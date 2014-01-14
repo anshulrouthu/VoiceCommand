@@ -12,34 +12,38 @@
 
 int main(int argc, char* argv[])
 {
+    Timer* timer = new Timer();
+    ALDevice* device= new ALDevice();
+    FLACWrapper* flac = new FLACWrapper();
+
     int c;
-    while ((c = getopt (argc, argv, "?:d:")) != -1)
+    while ((c = getopt (argc, argv, "?l:d:")) != -1)
     {
         switch (c)
         {
         case 'd':
-            g_dbglevel = (int)strtol(optarg,NULL,0);
+            DebugSetLevel(strtol(optarg,NULL,10));
+            break;
+        case 'l':
+            device->GetCaptureDeviceList();
+            return (0);
             break;
         default:
             break;
         }
     }
 
-    DBG_PRINT(DBG_ALWAYS,"Debug Level %d",g_dbglevel);
-    Timer* timer = new Timer();
-    ALDevice* device= new ALDevice();
-    FLACWrapper* flac = new FLACWrapper();
     flac->init();
-    device->init();
-    device->startCapture();
+    device->Init();
+    device->StartCapture();
     timer->StartTimer();
     while(!kbhit());
-    device->stopCapture();
+    device->StopCapture();
     timer->ResetTimer();
-    device->createWAV();
-    flac->setParameters(device->getNoSamples());
-    writeWAVData("audio.wav", (ALshort*) device->getData(), device->getNoSamples() * 2, 16000, 2);
-    flac->createFLAC(device->getData());
+    device->CreateWAV();
+    flac->setParameters(device->GetNoSamples());
+    writeWAVData("audio.wav", (ALshort*) device->GetData(), device->GetNoSamples() * 2, 16000, 2);
+    flac->createFLAC(device->GetData(),device->GetNoSamples());
     delete flac;
     delete device;
     delete timer;

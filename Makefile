@@ -15,19 +15,23 @@ MAINFILES:=source/voiceCommand.cpp samples/sample-record.cpp source/voiceCommand
 OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
 .PHONY: all
-all: clean $(OBJS) $(TARGET) sample
+all: bin clean $(OBJS) $(TARGET) sample
 	@cp $(SRC)/scripts/* $(BIN)/
 	@echo "Build successful"
-
+bin: 
+	@mkdir -p $@
+	
 $(TARGET):source/$(TARGET).o $(OBJS) 
-		$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: sample
-sample: sample-record
+sample: sample-record voiceCommand-old
 
 sample-record:samples/sample-record.o $(OBJS)
-	          $(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+	     $(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
+voiceCommand-old: source/voiceCommand-old.o $(OBJS)
+				$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 %.o: %.cpp
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
