@@ -27,8 +27,8 @@ private:
         return ("Timer");
     }
     virtual void Task();
-    clock_t start_time;
-    clock_t time_passed;
+    clock_t m_start_time;
+    clock_t m_time_passed;
     bool m_running;
 };
 

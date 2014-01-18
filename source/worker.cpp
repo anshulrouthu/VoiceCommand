@@ -35,8 +35,12 @@ void* WorkerThread::taskLauncher(void* p)
 }
 void WorkerThread::join()
 {
-    m_state = false;
     pthread_join(m_handle,NULL);
+}
+
+void WorkerThread::stop()
+{
+    m_state = false;
 }
 
 #endif /* WorkerThread_CPP_ */

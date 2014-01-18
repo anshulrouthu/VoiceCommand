@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "timer.h"
 
-Timer::Timer(): start_time(0),time_passed(0),m_running(false)
+Timer::Timer(): m_start_time(0),m_time_passed(0),m_running(false)
 {
     start();
 }
@@ -16,19 +16,18 @@ Timer::Timer(): start_time(0),time_passed(0),m_running(false)
 void Timer::StartTimer()
 {
     m_running = true;
-    start_time = clock();
+    m_start_time = clock();
 }
 
 void Timer::ResetTimer()
 {
-    m_running = false;
-    start_time = 0;
-    time_passed = 0;
+    //m_running = false;
+    m_start_time = m_time_passed = clock();
 }
 
 int Timer::GetTimePassed()
 {
-    return ((time_passed-start_time)/CLOCKS_PER_SEC);
+    return ((m_time_passed-m_start_time)/CLOCKS_PER_SEC);
 }
 
 void Timer::Task()
@@ -37,7 +36,7 @@ void Timer::Task()
     {
         if(m_running)
         {
-            time_passed = clock();
+            m_time_passed = clock();
         }
         //usleep(1000);
     }

@@ -9,38 +9,27 @@
 ALDevice::ALDevice() :
     m_running(false)
 {
+
+    m_captureBuffer = (void*) malloc(1048576);
+    m_audioprocess = new AudioProcessor();
+    m_timer = new Timer();
+    //OpenPlaybackDevice();
+    OpenCaptureDevice();
+
 }
 
 ALDevice::~ALDevice()
 {
-    // Wait for the source to stop playing
-    ALint playState;
-    playState = AL_PLAYING;
-    while (playState == AL_PLAYING)
-    {
-        //VC_TRACE("source %d is playing...", source);
-        alGetSourcei(source, AL_SOURCE_STATE, &playState);
-        usleep(100000);
-    }
-    VC_TRACE("Done with playback.");
-
-    alDeleteSources(1, &source);
-    alDeleteBuffers(1, &buf);
     alcMakeContextCurrent(NULL);
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
+    free(m_captureBuffer);
+    delete m_audioprocess;
 }
 
 VC_STATUS ALDevice::Init()
 {
-    VC_STATUS status = VC_SUCCESS;
-    m_captureBuffer = (void*) malloc(1048576);
-
-    GetCaptureDeviceList();
-    status = OpenPlaybackDevice();
-    status = OpenCaptureDevice();
-
-    return (status);
+    return (VC_SUCCESS);
 }
 
 VC_STATUS ALDevice::OpenPlaybackDevice()
@@ -90,18 +79,21 @@ VC_STATUS ALDevice::GetCaptureDeviceList()
 
 void ALDevice::Task()
 {
-    ALshort* captureBufPtr;
-    ALint samplesAvailable;
-
     while (m_state)
     {
-        alcCaptureStart(m_capturedev);
+        ALshort* captureBufPtr;
+        ALint samplesAvailable;
+        int amplitude = 0;
+        bool process_data = false;
         m_samplescaptured = 0;
         captureBufPtr = (ALshort*) m_captureBuffer;
         int sum = 0, j = 1;
-        ALshort* tmp;
+        ALshort* tmp = captureBufPtr;
+        m_timer->ResetTimer();
+        m_timer->StartTimer();
         while (m_running)
         {
+            alcCaptureStart(m_capturedev);
             alcGetIntegerv(m_capturedev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
             if (samplesAvailable > 0)
             {
@@ -112,23 +104,41 @@ void ALDevice::Task()
 
             if (j / 100)
             {
-                if (sum)
-                    VC_ALL("amplitude:%d", sum / j);
                 tmp = captureBufPtr;
                 sum = 0;
                 j = 0;
             }
+
             if (tmp)
             {
                 sum += abs((int) *tmp++);
                 j++;
             }
-            //if(sum/j>1000)
-            //break;
-            // Wait for a bit
-            //usleep(10000);
 
-            // Update the clock
+            if (sum/j > 2000) //checking the amplitude/volume greater that threashold
+            {
+                process_data = true;
+                //VC_TRACE("amplitude:%d %d", sum / j,m_timer->GetTimePassed());
+                m_timer->ResetTimer();
+            }
+
+            if(m_timer->GetTimePassed() > 1 )
+            {
+                VC_TRACE("Timer reached 1");
+                break;
+            }
+        }
+
+        if(process_data)
+        {
+            VC_TRACE("Processing data");
+            char *cmd = m_audioprocess->ProcessAudioData(GetData(),GetNoSamples());
+            if(!strcmp(cmd,"exit") || !strcmp(cmd,"cu") || !strcmp(cmd,"see you later") || !strcmp(cmd,"bye bye"))
+            {
+                VC_ALL("Exit command");
+                m_timer->stop();
+                StopCapture();
+            }
         }
     }
 }
@@ -143,30 +153,8 @@ void ALDevice::StartCapture()
 void ALDevice::StopCapture()
 {
     m_running = false;
-    join();
+    stop();
     alcCaptureStop(m_capturedev);
-}
-
-VC_STATUS ALDevice::CreateWAV()
-{
-    ALint playState;
-    VC_ALL("Creating WaV file...");
-    alGenBuffers(1, &buf);
-    alGenSources(1, &source);
-    alBufferData(buf, AL_FORMAT_STEREO16, (ALshort*) m_captureBuffer, m_samplescaptured * 2, SAMPLE_RATE);
-    alSourcei(source, AL_BUFFER, buf);
-    alSourcePlay(source);
-
-    // Wait for the source to stop playing
-    playState = AL_PLAYING;
-    while (playState == AL_PLAYING)
-    {
-        VC_ALL("source %d is playing...\r", source);
-        alGetSourcei(source, AL_SOURCE_STATE, &playState);
-        usleep(100000);
-    }
-
-    return (VC_SUCCESS);
 }
 
 int ALDevice::GetNoSamples()

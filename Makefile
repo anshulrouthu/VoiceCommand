@@ -11,17 +11,17 @@ TMP=tmp
 INC= -Isource/
 
 #list of files containing main() function, to prevent conflicts while compiling
-MAINFILES:=source/voiceCommand.cpp samples/sample-record.cpp source/voiceCommand-old.cpp
+MAINFILES:=source/console_command.cpp samples/sample-record.cpp source/voiceCommand-old.cpp
 OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
 .PHONY: all
-all: bin clean $(OBJS) $(TARGET) sample
+all: bin $(OBJS) $(TARGET) sample
 	@cp $(SRC)/scripts/* $(BIN)/
 	@echo "Build successful"
 bin: 
 	@mkdir -p $@
 	
-$(TARGET):source/$(TARGET).o $(OBJS) 
+$(TARGET):source/console_command.o $(OBJS) 
 	$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: sample

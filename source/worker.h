@@ -19,6 +19,7 @@ public:
     virtual ~WorkerThread();
     void start();
     void join();
+    void stop();
 private:
     virtual const char* c_str()
     {

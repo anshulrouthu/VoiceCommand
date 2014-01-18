@@ -11,12 +11,10 @@
 #include "utils.h"
 #include <AL/al.h>
 #include <AL/alc.h>
-#include <sys/time.h>
-#include <ctime>
-#include "FLAC/metadata.h"
-#include "FLAC/stream_encoder.h"
+#include "flac.h"
 #include <fstream>
 #include "worker.h"
+#include "audio_processor.h"
 
 #define SAMPLE_RATE 16000
 #define NO_OF_CHANNELS 2
@@ -27,7 +25,6 @@ public:
     ALDevice();
     virtual ~ALDevice();
     VC_STATUS Init();
-    VC_STATUS CreateWAV();
     void* GetData();
     void CreateFLAC();
     void PlayAudio();
@@ -53,6 +50,8 @@ private:
     ALuint buf;
     ALuint source;
     bool m_running;
+    Timer* m_timer;
+    AudioProcessor* m_audioprocess;
 
 };
 

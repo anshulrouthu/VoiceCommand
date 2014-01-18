@@ -17,6 +17,7 @@
 #define READSIZE 2048
 #define SAMPLE_RATE 16000
 #define NO_OF_CHANNELS 2
+#define BITS_PER_SECOND 16
 
 class FLACWrapper
 {

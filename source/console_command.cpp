@@ -7,14 +7,13 @@
 #include "utils.h"
 #include "timer.h"
 #include "aldevice.h"
-#include "voiceCommand.h"
+#include "command_processor.h"
+#include "console_command.h"
 #include "flac.h"
 
 int main(int argc, char* argv[])
 {
-    Timer* timer = new Timer();
     ALDevice* device= new ALDevice();
-    FLACWrapper* flac = new FLACWrapper();
 
     int c;
     while ((c = getopt (argc, argv, "?l:d:")) != -1)
@@ -33,20 +32,17 @@ int main(int argc, char* argv[])
         }
     }
 
-    flac->init();
-    device->Init();
+    //device->Init();
     device->StartCapture();
-    timer->StartTimer();
-    while(!kbhit());
-    device->StopCapture();
-    timer->ResetTimer();
-    device->CreateWAV();
-    flac->setParameters(device->GetNoSamples());
-    writeWAVData("audio.wav", (ALshort*) device->GetData(), device->GetNoSamples() * 2, 16000, 2);
-    flac->createFLAC(device->GetData(),device->GetNoSamples());
-    delete flac;
+    //timer->StartTimer();
+    //while(!kbhit());
+    device->join();
+    //device->StopCapture();
+    //timer->ResetTimer();
+    //device->CreateWAV();
+    //writeWAVData("audio.wav", (ALshort*) device->GetData(), device->GetNoSamples() * 2, 16000, 2);
     delete device;
-    delete timer;
+
     return(0);
 }
 
