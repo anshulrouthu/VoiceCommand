@@ -25,6 +25,7 @@ ALDevice::~ALDevice()
     alcCaptureCloseDevice(m_capturedev);
     free(m_captureBuffer);
     delete m_audioprocess;
+    delete m_timer;
 }
 
 VC_STATUS ALDevice::Init()
@@ -122,7 +123,7 @@ void ALDevice::Task()
                 m_timer->ResetTimer();
             }
 
-            if(m_timer->GetTimePassed() > 1 )
+            if(m_timer->GetTimePassed() >= 1 )
             {
                 VC_TRACE("Timer reached 1");
                 break;
@@ -136,7 +137,6 @@ void ALDevice::Task()
             if(!strcmp(cmd,"exit") || !strcmp(cmd,"cu") || !strcmp(cmd,"see you later") || !strcmp(cmd,"bye bye"))
             {
                 VC_ALL("Exit command");
-                m_timer->stop();
                 StopCapture();
             }
         }

@@ -12,7 +12,7 @@
 #include<stdio.h>
 #include "worker.h"
 
-class Timer: public WorkerThread
+class Timer
 {
 public:
     Timer();
@@ -26,10 +26,7 @@ private:
     {
         return ("Timer");
     }
-    virtual void Task();
     clock_t m_start_time;
-    clock_t m_time_passed;
-    bool m_running;
 };
 
 
