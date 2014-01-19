@@ -22,11 +22,10 @@
 class FLACWrapper
 {
 public:
-    FLACWrapper(){};
+    FLACWrapper();
     ~FLACWrapper();
-    VC_STATUS init();
     VC_STATUS createFLAC(void* data, int total_samples);
-    VC_STATUS setParameters(int samples);
+    VC_STATUS setParameters();
 private:
     static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
     const char* c_str()
@@ -36,8 +35,6 @@ private:
 
     FLAC__StreamEncoder* m_encoder;
     FLAC__StreamMetadata* m_metadata[2];
-    unsigned bps;
-
 };
 
 #endif /* FLAC_H_ */

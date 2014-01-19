@@ -6,9 +6,10 @@ SRC=./source
 SAMPLES=./samples/*.cpp
 BIN=bin
 INCLUDE=
-LIBS= -ljson_spirit -lcurl -lboost_regex -lasound -lopenal -lFLAC
+LIBS= -ljson_spirit -lcurl -lboost_regex -lasound -lopenal -lFLAC -ljsoncpp
 TMP=tmp
-INC= -Isource/
+INC= -Isource/ -Itarget/include/
+LDPATH= -Ltarget/lib/
 
 #list of files containing main() function, to prevent conflicts while compiling
 MAINFILES:=source/console_command.cpp samples/sample-record.cpp source/voiceCommand-old.cpp
@@ -22,16 +23,16 @@ bin:
 	@mkdir -p $@
 	
 $(TARGET):source/console_command.o $(OBJS) 
-	$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: sample
 sample: sample-record voiceCommand-old
 
 sample-record:samples/sample-record.o $(OBJS)
-	     $(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 voiceCommand-old: source/voiceCommand-old.o $(OBJS)
-				$(CC) $(CFLAGS) $^ -o $(BIN)/$@ $(LIBS)
+		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 %.o: %.cpp
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 

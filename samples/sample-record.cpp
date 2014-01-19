@@ -205,7 +205,7 @@ int main(void)
     ok &= FLAC__stream_encoder_set_channels(encoder, channels);
     ok &= FLAC__stream_encoder_set_bits_per_sample(encoder, bps);
     ok &= FLAC__stream_encoder_set_sample_rate(encoder, sample_rate);
-    ok &= FLAC__stream_encoder_set_total_samples_estimate(encoder, total_samples);
+    //ok &= FLAC__stream_encoder_set_total_samples_estimate(encoder, total_samples);
 
     /* now add some metadata; we'll add some tags and a padding block */
     if(ok) {
@@ -229,7 +229,7 @@ int main(void)
 
     /* initialize encoder */
     if(ok) {
-        init_status = FLAC__stream_encoder_init_file(encoder, "audio.flac", progress_callback, /*client_data=*/NULL);
+        init_status = FLAC__stream_encoder_init_file(encoder, "audiotest.flac", progress_callback, /*client_data=*/NULL);
         if(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK) {
             fprintf(stderr, "ERROR: initializing encoder: %s\n", FLAC__StreamEncoderInitStatusString[init_status]);
             ok = false;

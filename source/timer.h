@@ -19,7 +19,7 @@ public:
     virtual ~Timer(){}
     void StartTimer();
     void ResetTimer();
-    int GetTimePassed();
+    float GetTimePassed();
 
 private:
     virtual const char* c_str()

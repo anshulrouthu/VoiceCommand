@@ -25,17 +25,25 @@ int main(int argc, char* argv[])
             break;
         case 'l':
             device->GetCaptureDeviceList();
-            return (0);
+            exit(0);
             break;
         default:
             break;
         }
     }
 
-    //device->Init();
     device->StartCapture();
+    while(c!='q')
+    {
+        c = getch();
+        DBG_PRINT(DBG_TRACE,"key hit %c",c);
+
+        usleep(10000);
+    }
+    //device->Init();
     //timer->StartTimer();
     //while(!kbhit());
+    device->StopCapture();
     device->join();
     //device->StopCapture();
     //timer->ResetTimer();

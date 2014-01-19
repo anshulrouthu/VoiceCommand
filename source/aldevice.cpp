@@ -10,7 +10,7 @@ ALDevice::ALDevice() :
     m_running(false)
 {
 
-    m_captureBuffer = (void*) malloc(1048576);
+    m_captureBuffer = (void*) malloc(5*1024*1024);
     m_audioprocess = new AudioProcessor();
     m_timer = new Timer();
     //OpenPlaybackDevice();
@@ -92,48 +92,44 @@ void ALDevice::Task()
         ALshort* tmp = captureBufPtr;
         m_timer->ResetTimer();
         m_timer->StartTimer();
+        alcCaptureStart(m_capturedev);
         while (m_running)
         {
-            alcCaptureStart(m_capturedev);
             alcGetIntegerv(m_capturedev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
-            if (samplesAvailable > 0)
-            {
-                alcCaptureSamples(m_capturedev, captureBufPtr, samplesAvailable);
-                m_samplescaptured += samplesAvailable;
-                captureBufPtr += samplesAvailable * 2;
-            }
 
-            if (j / 100)
+            if (samplesAvailable > 0)
             {
                 tmp = captureBufPtr;
                 sum = 0;
-                j = 0;
-            }
+                alcCaptureSamples(m_capturedev, captureBufPtr, samplesAvailable);
+                m_samplescaptured += samplesAvailable;
+                captureBufPtr += samplesAvailable * 2;
 
-            if (tmp)
-            {
-                sum += abs((int) *tmp++);
-                j++;
-            }
+                while (tmp <= captureBufPtr)
+                {
+                    sum += abs((int) *tmp++);
+                }
 
-            if (sum/j > 2000) //checking the amplitude/volume greater that threashold
-            {
-                process_data = true;
-                //VC_TRACE("amplitude:%d %d", sum / j,m_timer->GetTimePassed());
-                m_timer->ResetTimer();
-            }
+                if (sum / samplesAvailable > 1200) //checking the amplitude/volume greater that threashold
+                {
+                    m_timer->ResetTimer();
+                    process_data = true;
+                    VC_TRACE("amplitude:%d %f", sum / samplesAvailable, m_timer->GetTimePassed());
+                    VC_TRACE("Timer Reset");
+                }
 
-            if(m_timer->GetTimePassed() >= 1 )
-            {
-                VC_TRACE("Timer reached 1");
-                break;
+                if (m_timer->GetTimePassed() >= 0.5)
+                {
+                    VC_TRACE("TimeOut");
+                    break;
+                }
             }
         }
 
         if(process_data)
         {
             VC_TRACE("Processing data");
-            char *cmd = m_audioprocess->ProcessAudioData(GetData(),GetNoSamples());
+            const char *cmd = m_audioprocess->ProcessAudioData(GetData(),GetNoSamples());
             if(!strcmp(cmd,"exit") || !strcmp(cmd,"cu") || !strcmp(cmd,"see you later") || !strcmp(cmd,"bye bye"))
             {
                 VC_ALL("Exit command");
@@ -146,7 +142,7 @@ void ALDevice::Task()
 void ALDevice::StartCapture()
 {
     start();
-    usleep(1000000);
+    usleep(100000);
     m_running = true;
 }
 

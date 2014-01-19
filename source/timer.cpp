@@ -22,7 +22,7 @@ void Timer::ResetTimer()
     m_start_time = clock();
 }
 
-int Timer::GetTimePassed()
+float Timer::GetTimePassed()
 {
     return ((clock()-m_start_time)/CLOCKS_PER_SEC);
 }

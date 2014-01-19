@@ -21,6 +21,7 @@
 
 void DebugSetLevel(int level);
 int kbhit(void);
+int getch(void);
 
 /*
  * Debugging code: helps us in easy debugging of the application
