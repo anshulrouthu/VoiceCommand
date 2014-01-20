@@ -32,6 +32,7 @@ VC_STATUS AudioProcessor::ProcessAudioData(void* data, int samples, char* text)
         if(hypotheses["confidence"].isDouble())
         {
             confidence = hypotheses["confidence"].asDouble();
+            VC_MSG("Confidence %f",confidence);
         }
 
         if (confidence > 0.8 && hypotheses["utterance"].isString())
@@ -48,23 +49,12 @@ VC_STATUS AudioProcessor::ProcessAudioData(void* data, int samples, char* text)
 
 CURLWrapper::CURLWrapper(char* filename):m_header(NULL),m_formpost(NULL)
 {
-    struct curl_httppost *lastptr = NULL;
-
     curl_global_init(CURL_GLOBAL_ALL);
     m_curl = curl_easy_init();
 
     VC_CHECK(m_curl == NULL,,"Error Initializing Curl");
     m_header = curl_slist_append(m_header, "Content-type: audio/x-flac; rate=16000");
     m_buffer = (char*) malloc(400*sizeof(char));
-
-    curl_formadd(&m_formpost, &lastptr, CURLFORM_COPYNAME, "sendfile", CURLFORM_FILE, filename, CURLFORM_END);
-
-    curl_easy_setopt(m_curl, CURLOPT_URL,VC_SPEECH_ENGINE);
-    curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_header);
-    curl_easy_setopt(m_curl, CURLOPT_HTTPPOST, m_formpost);
-    curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, CURLWrapper::WriteData);
-    curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void*)m_buffer);
-    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 0);
 }
 
 CURLWrapper::~CURLWrapper()
@@ -79,6 +69,15 @@ CURLWrapper::~CURLWrapper()
 char* CURLWrapper::GetText()
 {
     VC_MSG("Enter");
+    struct curl_httppost *lastptr = NULL;
+    curl_formadd(&m_formpost, &lastptr, CURLFORM_COPYNAME, "sendfile", CURLFORM_FILE, "audio.flac", CURLFORM_END);
+
+    curl_easy_setopt(m_curl, CURLOPT_URL,VC_SPEECH_ENGINE);
+    curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_header);
+    curl_easy_setopt(m_curl, CURLOPT_HTTPPOST, m_formpost);
+    curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, CURLWrapper::WriteData);
+    curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void*)m_buffer);
+    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 0);
     VC_CHECK(curl_easy_perform(m_curl) != CURLE_OK,return (NULL),"Error requesting command");
     return (m_buffer);
 }
@@ -86,7 +85,8 @@ char* CURLWrapper::GetText()
 size_t CURLWrapper::WriteData(void* buffer,size_t size, size_t n, void* ptr)
 {
     DBG_PRINT(DBG_TRACE,"Enter %d",size*n);
-    memcpy(ptr,buffer,size*n);
+    //memcpy(ptr,buffer,size*n);
+    strcpy((char*)ptr,(char*)buffer);
     DBG_PRINT(DBG_TRACE,"Command Data %s",(char*)buffer);
     return (size*n);
 }
