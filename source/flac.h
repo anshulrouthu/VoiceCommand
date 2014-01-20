@@ -22,7 +22,7 @@
 class FLACWrapper
 {
 public:
-    FLACWrapper();
+    FLACWrapper(char* filename);
     ~FLACWrapper();
     VC_STATUS createFLAC(void* data, int total_samples);
     VC_STATUS setParameters();
@@ -35,6 +35,7 @@ private:
 
     FLAC__StreamEncoder* m_encoder;
     FLAC__StreamMetadata* m_metadata[2];
+    char* m_filename;
 };
 
 #endif /* FLAC_H_ */

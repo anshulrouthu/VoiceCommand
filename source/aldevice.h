@@ -22,9 +22,8 @@
 class ALDevice: public WorkerThread
 {
 public:
-    ALDevice();
+    ALDevice(int threashold);
     virtual ~ALDevice();
-    VC_STATUS Init();
     void* GetData();
     void CreateFLAC();
     void PlayAudio();
@@ -32,6 +31,7 @@ public:
     void StartCapture();
     void StopCapture();
     VC_STATUS GetCaptureDeviceList();
+    VC_STATUS ThresholdSetup();
 
 private:
     virtual const char*  c_str()
@@ -47,11 +47,11 @@ private:
     ALCdevice* m_capturedev;
     void* m_captureBuffer;
     ALint m_samplescaptured;
-    ALuint buf;
-    ALuint source;
     bool m_running;
     Timer* m_timer;
     AudioProcessor* m_audioprocess;
+    int m_threshold;
+    char* m_text;
 
 };
 

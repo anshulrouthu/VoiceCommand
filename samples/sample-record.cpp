@@ -126,7 +126,7 @@ int main(void)
     while (!kbhit())
     {
         //t.StartTimer();
-        printf("seconds passed: %d\n",t.GetTimePassed());
+        printf("seconds passed: %f\n",t.GetTimePassed());
         // Get the number of samples available
         alcGetIntegerv(captureDev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
 

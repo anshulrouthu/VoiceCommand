@@ -13,10 +13,10 @@
 
 int main(int argc, char* argv[])
 {
-    ALDevice* device= new ALDevice();
-
     int c;
-    while ((c = getopt (argc, argv, "?l:d:")) != -1)
+    int threshold = 1500;
+    bool autosetup=false;
+    while ((c = getopt (argc, argv, "s?l:d:t:")) != -1)
     {
         switch (c)
         {
@@ -24,17 +24,32 @@ int main(int argc, char* argv[])
             DebugSetLevel(strtol(optarg,NULL,10));
             break;
         case 'l':
-            device->GetCaptureDeviceList();
+            //device->GetCaptureDeviceList();
             exit(0);
+            break;
+        case 's':
+            autosetup = true;
+            break;
+        case 't':
+            threshold = (int)strtol(optarg,NULL,10);
+            DBG_PRINT(DBG_TRACE,"Audio Volume threshold: %d",threshold);
             break;
         default:
             break;
         }
     }
 
+    ALDevice* device = new ALDevice(threshold);
+    if (autosetup)
+    {
+        device->ThresholdSetup();
+    }
+
     device->StartCapture();
+
     while(c!='q')
     {
+        DBG_PRINT(DBG_TRACE,"Please hit 'q' to exit");
         c = getch();
         DBG_PRINT(DBG_TRACE,"key hit %c",c);
 

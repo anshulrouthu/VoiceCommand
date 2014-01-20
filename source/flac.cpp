@@ -6,7 +6,7 @@
  */
 #include "flac.h"
 
-FLACWrapper::FLACWrapper()
+FLACWrapper::FLACWrapper(char* filename):m_filename(filename)
 {
    m_encoder = FLAC__stream_encoder_new();
    VC_CHECK(m_encoder == NULL,,"Error Initializing FLAC encoder");
@@ -54,6 +54,7 @@ VC_STATUS FLACWrapper::setParameters()
 
 VC_STATUS FLACWrapper::createFLAC(void* data, int total_samples)
 {
+    VC_MSG("Enter");
     FLAC__byte* buffer;
     buffer = (FLAC__byte*) data;
     size_t left = (size_t) total_samples;
@@ -61,7 +62,7 @@ VC_STATUS FLACWrapper::createFLAC(void* data, int total_samples)
     FLAC__StreamEncoderInitStatus init_status;
 
     setParameters();
-    init_status = FLAC__stream_encoder_init_file(m_encoder, "audio.flac", FLACWrapper::progress_callback, NULL);
+    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, NULL);
     VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
 
     while (left)
@@ -80,7 +81,7 @@ VC_STATUS FLACWrapper::createFLAC(void* data, int total_samples)
     }
 
     FLAC__stream_encoder_finish(m_encoder);
-
+    usleep(10000);
     return (VC_SUCCESS);
 }
 

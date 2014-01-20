@@ -6,16 +6,16 @@
  */
 #include "aldevice.h"
 
-ALDevice::ALDevice() :
-    m_running(false)
+ALDevice::ALDevice(int threshold) :
+    m_running(false),m_threshold(threshold)
 {
-
     m_captureBuffer = (void*) malloc(5*1024*1024);
+    VC_CHECK(!m_captureBuffer,,"Error allocating m_captureBuffer");
     m_audioprocess = new AudioProcessor();
     m_timer = new Timer();
-    //OpenPlaybackDevice();
+    m_text = (char*)malloc(200*sizeof(char));
+    VC_CHECK(!m_text,,"Error allocating m_text");
     OpenCaptureDevice();
-
 }
 
 ALDevice::~ALDevice()
@@ -23,18 +23,97 @@ ALDevice::~ALDevice()
     alcMakeContextCurrent(NULL);
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
-    free(m_captureBuffer);
+    if(m_captureBuffer)
+        free(m_captureBuffer);
+    if(m_text)
+        free(m_text);
     delete m_audioprocess;
     delete m_timer;
+
 }
 
-VC_STATUS ALDevice::Init()
+VC_STATUS ALDevice::ThresholdSetup()
 {
+    VC_ALL("Initiating Calibration...");
+    int i = 0,k=0;
+    ALshort* ptr;
+    ALint samplesAvailable;
+    m_samplescaptured = 0;
+    ptr = (ALshort*) m_captureBuffer;
+    int sum = 0, th[] = {0,0};
+    ALshort* tmp = ptr;
+    alcCaptureStart(m_capturedev);
+
+iteration2:
+
+    time_t lastTime,currentTime;
+    for (int j = 4; j > 0; j--)
+    {
+        if(i==0)
+        {
+            printf("Please say 'Hello VoiceCommand' in %d sec... \r",j);
+        }
+        else
+        {
+            printf("Please be quite in %d sec... \r",j);
+            i=0;
+        }
+
+        fflush(stdout);
+        lastTime = time(NULL);
+        currentTime = lastTime;
+        while (currentTime == lastTime)
+        {
+            currentTime = time(NULL);
+            usleep(100000);
+        }
+    }
+
+    m_timer->ResetTimer();
+    m_timer->StartTimer();
+    sum = 0;
+    while (m_timer->GetTimePassed() < 1.5)
+    {
+        alcGetIntegerv(m_capturedev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
+        if (samplesAvailable > 0)
+        {
+            i++;
+            tmp = ptr;
+            sum = 0;
+            alcCaptureSamples(m_capturedev, ptr, samplesAvailable);
+            m_samplescaptured += samplesAvailable;
+            ptr += samplesAvailable * 2;
+
+            while (tmp <= ptr)
+            {
+                sum += abs((int) *tmp++);
+            }
+
+            th[k] +=sum/samplesAvailable;
+            VC_TRACE("amplitude:%d", sum / samplesAvailable);
+        }
+    }
+    th[k]/=i;
+    m_audioprocess->ProcessAudioData(GetData(), GetNoSamples(),m_text);
+    if(strcmp(m_text,"hello voice command"))
+    {
+        VC_ALL("Auto Setup is unsuccessful");
+        //return (VC_STATUS);
+    }
+    VC_ALL("Auto Setup is completed. Threshold level is %d %d %d",th[0],th[1],(th[0]+th[1])/2);
+    if(!k)
+    {
+        k++;
+        goto iteration2;
+    }
+
+    m_threshold = (th[0]+th[1])/2;
     return (VC_SUCCESS);
 }
 
 VC_STATUS ALDevice::OpenPlaybackDevice()
 {
+    VC_MSG("Enter");
     ALCcontext* mainctx;
     m_playbackdev = alcOpenDevice(NULL);
 
@@ -54,7 +133,7 @@ VC_STATUS ALDevice::OpenPlaybackDevice()
 
 VC_STATUS ALDevice::OpenCaptureDevice()
 {
-    VC_TRACE("Opening capture device:");
+    VC_MSG("Enter");
 
     m_capturedev = alcCaptureOpenDevice(NULL, SAMPLE_RATE, AL_FORMAT_STEREO16, 800);
 
@@ -69,7 +148,7 @@ VC_STATUS ALDevice::GetCaptureDeviceList()
     printf("Available capture devices:\n");
     const char *ptr = alcGetString(NULL, ALC_CAPTURE_DEVICE_SPECIFIER);
 
-    while (ptr[0] != NULL)
+    while (ptr[0] != 0)
         while (*ptr)
         {
             printf("   %s\n", ptr);
@@ -80,15 +159,16 @@ VC_STATUS ALDevice::GetCaptureDeviceList()
 
 void ALDevice::Task()
 {
+    VC_MSG("Enter");
+
     while (m_state)
     {
         ALshort* captureBufPtr;
         ALint samplesAvailable;
-        int amplitude = 0;
         bool process_data = false;
         m_samplescaptured = 0;
         captureBufPtr = (ALshort*) m_captureBuffer;
-        int sum = 0, j = 1;
+        int sum = 0;
         ALshort* tmp = captureBufPtr;
         m_timer->ResetTimer();
         m_timer->StartTimer();
@@ -110,7 +190,7 @@ void ALDevice::Task()
                     sum += abs((int) *tmp++);
                 }
 
-                if (sum / samplesAvailable > 1200) //checking the amplitude/volume greater that threashold
+                if (sum / samplesAvailable > m_threshold) //checking the amplitude/volume greater that threashold
                 {
                     m_timer->ResetTimer();
                     process_data = true;
@@ -128,12 +208,14 @@ void ALDevice::Task()
 
         if(process_data)
         {
-            VC_TRACE("Processing data");
-            const char *cmd = m_audioprocess->ProcessAudioData(GetData(),GetNoSamples());
-            if(!strcmp(cmd,"exit") || !strcmp(cmd,"cu") || !strcmp(cmd,"see you later") || !strcmp(cmd,"bye bye"))
+            if (m_audioprocess->ProcessAudioData(GetData(), GetNoSamples(),m_text) == VC_SUCCESS)
             {
-                VC_ALL("Exit command");
-                StopCapture();
+                VC_ALL("Received Text: %s", m_text);
+                if (!strcmp(m_text, "exit") || !strcmp(m_text, "cu") || !strcmp(m_text, "see you later") || !strcmp(m_text, "bye bye"))
+                {
+                    VC_ALL("Exit command");
+                    StopCapture();
+                }
             }
         }
     }

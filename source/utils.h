@@ -38,7 +38,8 @@ private:
 };
 
 #define DBG_ALWAYS 0
-#define DBG_TRACE 1
+#define DBG_MESSAGE 1
+#define DBG_TRACE 2
 
 #define DBGPRINT(level,msg) vcDebug(level).DebugPrint msg
 
@@ -50,7 +51,7 @@ private:
 #define VC_DBG_ERR(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format " in %s\n", __LINE__, c_str(), __FUNCTION__, ##args, __FILE__))
 #define VC_ERR(format, args...)  VC_DBG_ERR(DBG_ALWAYS,  format, ##args)
 #define VC_ALL(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
-#define VC_MSG(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
+#define VC_MSG(format, args...)  VC_DBG(DBG_MESSAGE,   format, ##args)
 #define VC_TRACE(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
 
 
