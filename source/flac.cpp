@@ -19,6 +19,23 @@ FLACWrapper::~FLACWrapper()
     FLAC__stream_encoder_delete(m_encoder);
 }
 
+VC_STATUS FLACWrapper::InitiateFLACCapture()
+{
+    FLAC__StreamEncoderInitStatus init_status;
+
+    setParameters();
+    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, NULL);
+    VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
+
+    return (VC_SUCCESS);
+}
+
+VC_STATUS FLACWrapper::CloseFLACCapture()
+{
+    FLAC__stream_encoder_finish(m_encoder);
+    //usleep(5000);
+    return (VC_SUCCESS);
+}
 VC_STATUS FLACWrapper::setParameters()
 {
     bool ok = true;
@@ -52,18 +69,13 @@ VC_STATUS FLACWrapper::setParameters()
     return (VC_SUCCESS);
 }
 
-VC_STATUS FLACWrapper::createFLAC(void* data, int total_samples)
+VC_STATUS FLACWrapper::WriteData(void* data, int samples)
 {
     VC_MSG("Enter");
     FLAC__byte* buffer;
     buffer = (FLAC__byte*) data;
-    size_t left = (size_t) total_samples;
+    size_t left = (size_t) samples;
     FLAC__int32 pcm[READSIZE * 2];
-    FLAC__StreamEncoderInitStatus init_status;
-
-    setParameters();
-    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, NULL);
-    VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
 
     while (left)
     {
@@ -80,8 +92,6 @@ VC_STATUS FLACWrapper::createFLAC(void* data, int total_samples)
         buffer += need * 4;
     }
 
-    FLAC__stream_encoder_finish(m_encoder);
-    usleep(10000);
     return (VC_SUCCESS);
 }
 
@@ -90,6 +100,6 @@ void FLACWrapper::progress_callback(const FLAC__StreamEncoder *m_encoder, FLAC__
 {
     (void) m_encoder, (void) client_data;
 
-    //fprintf(stderr, "wrote %llu bytes, %llu samples, %u/%u frames", bytes_written, samples_written, frames_written, total_frames_estimate);
+    fprintf(stderr, "wrote %llu bytes, %llu samples, %u/%u frames\n", bytes_written, samples_written, frames_written, total_frames_estimate);
 }
 

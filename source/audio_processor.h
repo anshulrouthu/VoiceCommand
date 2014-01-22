@@ -31,7 +31,9 @@ class AudioProcessor
 public:
     AudioProcessor();
     ~AudioProcessor();
-    VC_STATUS ProcessAudioData(void* data,int samples, char* text);
+    VC_STATUS ProcessAudioData(void* data,int samples);
+    VC_STATUS InitiateDataProcessing();
+    VC_STATUS CloseDataProcessing(char* text);
 
 private:
     const char* c_str()

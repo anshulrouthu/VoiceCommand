@@ -23,8 +23,8 @@ ALDevice::~ALDevice()
     alcMakeContextCurrent(NULL);
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
-    if(m_captureBuffer)
-        free(m_captureBuffer);
+    //if(m_captureBuffer)
+      //  free(m_captureBuffer);
     if(m_text)
         free(m_text);
     delete m_audioprocess;
@@ -94,7 +94,7 @@ iteration2:
         }
     }
     th[k]/=i;
-    m_audioprocess->ProcessAudioData(GetData(), GetNoSamples(),m_text);
+    m_audioprocess->ProcessAudioData(GetData(), GetNoSamples());
     if(strcmp(m_text,"hello voice command"))
     {
         VC_ALL("Auto Setup is unsuccessful");
@@ -169,7 +169,7 @@ void ALDevice::Task()
         m_samplescaptured = 0;
         captureBufPtr = (ALshort*) m_captureBuffer;
         int sum = 0;
-        ALshort* tmp = captureBufPtr;
+        ALshort* it = captureBufPtr;
         m_timer->ResetTimer();
         m_timer->StartTimer();
         alcCaptureStart(m_capturedev);
@@ -179,42 +179,55 @@ void ALDevice::Task()
 
             if (samplesAvailable > 0)
             {
-                tmp = captureBufPtr;
                 sum = 0;
                 alcCaptureSamples(m_capturedev, captureBufPtr, samplesAvailable);
                 m_samplescaptured += samplesAvailable;
-                captureBufPtr += samplesAvailable * 2;
+                it += samplesAvailable * 2;
 
-                while (tmp <= captureBufPtr)
+                for(ALshort* tmp = captureBufPtr;tmp <= it;tmp++)
                 {
-                    sum += abs((int) *tmp++);
+                    sum += abs((int) *tmp);
                 }
+
+                captureBufPtr += samplesAvailable * 2;
 
                 if (sum / samplesAvailable > m_threshold) //checking the amplitude/volume greater that threashold
                 {
                     m_timer->ResetTimer();
-                    process_data = true;
+                    VC_MSG("Timer Reset");
+                    if(!process_data)
+                    {
+                        m_audioprocess->InitiateDataProcessing();
+                        process_data = true;
+                    }
+
+                    m_audioprocess->ProcessAudioData(m_captureBuffer, m_samplescaptured);
+                    m_samplescaptured = 0;
+                    m_captureBuffer = captureBufPtr;
+
                     VC_TRACE("amplitude:%d %f", sum / samplesAvailable, m_timer->GetTimePassed());
-                    VC_TRACE("Timer Reset");
                 }
+
+                //VC_ALL("samles %d %d",samplesAvailable,sum/samplesAvailable);
 
                 if (m_timer->GetTimePassed() >= 0.5)
                 {
                     VC_TRACE("TimeOut");
-                    break;
-                }
-            }
-        }
+                    if(process_data)
+                    {
+                        alcCaptureStop(m_capturedev);
 
-        if(process_data)
-        {
-            if (m_audioprocess->ProcessAudioData(GetData(), GetNoSamples(),m_text) == VC_SUCCESS)
-            {
-                VC_ALL("Received Text: %s", m_text);
-                if (!strcmp(m_text, "exit") || !strcmp(m_text, "cu") || !strcmp(m_text, "see you later") || !strcmp(m_text, "bye bye"))
-                {
-                    VC_ALL("Exit command");
-                    StopCapture();
+                        if (m_audioprocess->CloseDataProcessing(m_text) == VC_SUCCESS)
+                        {
+                            VC_ALL("Received Text: %s", m_text);
+                            if (!strcmp(m_text, "exit") || !strcmp(m_text, "cu") || !strcmp(m_text, "see you later") || !strcmp(m_text, "bye bye"))
+                            {
+                                VC_ALL("Exit command");
+                                StopCapture();
+                            }
+                        }
+                    }
+                    break;
                 }
             }
         }

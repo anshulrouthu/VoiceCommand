@@ -12,38 +12,54 @@ AudioProcessor::~AudioProcessor()
     delete m_curl;
 }
 
-VC_STATUS AudioProcessor::ProcessAudioData(void* data, int samples, char* text)
+VC_STATUS AudioProcessor::InitiateDataProcessing()
 {
-    VC_MSG("Enter");
-    char *cmd;
+    m_flac->InitiateFLACCapture();
+    return (VC_SUCCESS);
+}
+
+VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
+{
     Json::Value root;
     Json::Value hypotheses;
     const char* utterance;
     double confidence;
+    char *cmd;
 
-    VC_CHECK(m_flac->createFLAC(data, samples)!= VC_SUCCESS,,"Error creating FLAC file");
+    m_flac->CloseFLACCapture();
+    text[0] = '\0';
     cmd = m_curl->GetText();
     if (cmd)
     {
-        VC_CHECK(!m_reader.parse(cmd, root, true),return (VC_FAILURE),"Error parsing text");
+        VC_CHECK(!m_reader.parse(cmd, root, true), return (VC_FAILURE), "Error parsing text");
 
         hypotheses = root["hypotheses"][(unsigned int) (0)];
 
-        if(hypotheses["confidence"].isDouble())
+        if (hypotheses["confidence"].isDouble())
         {
             confidence = hypotheses["confidence"].asDouble();
-            VC_MSG("Confidence %f",confidence);
+            VC_MSG("Confidence %f", confidence);
         }
 
-        if (confidence > 0.8 && hypotheses["utterance"].isString())
+        if (confidence > 0.7 && hypotheses["utterance"].isString())
         {
             utterance = hypotheses["utterance"].asCString();
-            strcpy(text,utterance);
-            cmd[0]='\0';
+            strcpy(text, utterance);
+            cmd[0] = '\0';
             VC_TRACE("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
             return (VC_SUCCESS);
         }
     }
+    return (VC_SUCCESS);
+}
+
+VC_STATUS AudioProcessor::ProcessAudioData(void* data, int samples)
+{
+    VC_MSG("Enter");
+
+    //just call flac write data to file
+    VC_CHECK(m_flac->WriteData(data, samples)!= VC_SUCCESS,,"Error creating FLAC file");
+
     return (VC_FAILURE);
 }
 
