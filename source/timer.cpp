@@ -24,6 +24,7 @@ void Timer::ResetTimer()
 
 float Timer::GetTimePassed()
 {
+    //return (difftime(time(NULL),m_start_time));
     return ((clock()-m_start_time)/CLOCKS_PER_SEC);
 }
 

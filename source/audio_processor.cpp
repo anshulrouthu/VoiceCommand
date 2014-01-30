@@ -1,15 +1,34 @@
 #include "audio_processor.h"
+#define NUM_OF_BUFFERS 8
+
+#define OLD_METHOD_PROCESSING 0
 
 AudioProcessor::AudioProcessor()
 {
     m_flac = new FLACWrapper((char*)VC_AUDIO_FILENAME);
     m_curl = new CURLWrapper((char*)VC_AUDIO_FILENAME);
+
+    for(int i=0;i<NUM_OF_BUFFERS;i++)
+    {
+        Buffer* buf = new Buffer();
+        m_buffers.push_back(buf);
+    }
+#if not OLD_METHOD_PROCESSING
+    start();
+#endif
 }
 
 AudioProcessor::~AudioProcessor()
 {
+    stop();
+    join();
     delete m_flac;
     delete m_curl;
+    for(std::list<Buffer*>::iterator it = m_buffers.begin(); it != m_buffers.end() ; it++)
+    {
+        delete *it;
+    }
+    m_buffers.clear();
 }
 
 VC_STATUS AudioProcessor::InitiateDataProcessing()
@@ -20,6 +39,7 @@ VC_STATUS AudioProcessor::InitiateDataProcessing()
 
 VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
 {
+#if not OLD_METHOD_PROCESSING
     Json::Value root;
     Json::Value hypotheses;
     const char* utterance;
@@ -50,17 +70,134 @@ VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
             return (VC_SUCCESS);
         }
     }
+#else
+    VC_ALL("buffers size %d",m_processbuf.size());
+    while(m_processbuf.size()!=0);
+    m_flac->CloseFLACCapture();
+    strcpy(text,m_text);
+    m_text[0] = '\0';
+    VC_ALL("Got text is %s",m_text);
+
+#endif
     return (VC_SUCCESS);
 }
 
-VC_STATUS AudioProcessor::ProcessAudioData(void* data, int samples)
+VC_STATUS AudioProcessor::ProcessAudioData(Buffer* buf)
 {
     VC_MSG("Enter");
 
     //just call flac write data to file
-    VC_CHECK(m_flac->WriteData(data, samples)!= VC_SUCCESS,,"Error creating FLAC file");
+    int frames = m_flac->WriteData(buf->GetData(), buf->GetSamples());
+    RecycleBuffer(buf);
+    if(frames>2)
+    {
+        //send the data to google save the text untill close capture is closes
+    }
 
     return (VC_FAILURE);
+}
+
+VC_STATUS AudioProcessor::GetText(char* text)
+{
+    Json::Value root;
+    Json::Value hypotheses;
+    const char* utterance;
+    double confidence;
+    char *cmd;
+
+    m_flac->CloseFLACCapture();
+    text[0] = '\0';
+    cmd = m_curl->GetText();
+    if (cmd)
+    {
+        VC_CHECK(!m_reader.parse(cmd, root, true), return (VC_FAILURE), "Error parsing text");
+
+        hypotheses = root["hypotheses"][(unsigned int) (0)];
+
+        if (hypotheses["confidence"].isDouble())
+        {
+            confidence = hypotheses["confidence"].asDouble();
+            VC_MSG("Confidence %f", confidence);
+        }
+
+        if (confidence > 0.4 && hypotheses["utterance"].isString())
+        {
+            utterance = hypotheses["utterance"].asCString();
+            strcpy(text, utterance);
+            cmd[0] = '\0';
+            VC_TRACE("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
+            return (VC_SUCCESS);
+        }
+    }
+    return (VC_SUCCESS);
+}
+
+void AudioProcessor::Task()
+{
+    VC_ALL("Enter");
+    bool senddata=false;
+    while(m_state)
+    {
+        if(m_processbuf.size()>0)
+        {
+            char text[2048];
+            int samples;
+            VC_ALL("Thread running");
+            Buffer* buf =  m_processbuf.front();
+            m_processbuf.pop_front();
+            if (buf->GetTag() == TAG_BREAK && senddata)
+            {
+                CloseDataProcessing(text);
+                VC_ALL("GotText %s",text);
+                strcat(m_text," ");
+                strcat(m_text,text);
+                VC_ALL("GotText %s",m_text);
+                InitiateDataProcessing();
+                senddata = false;
+            }
+            else
+            {
+                senddata=true;
+                samples = m_flac->WriteData(buf->GetData(), buf->GetSamples());
+                RecycleBuffer(buf);
+            }
+
+            if (samples > 5000)
+            {
+
+                VC_ALL("samples written %d", samples);
+                //GetText(text);
+                //m_flac->InitiateFLACCapture();
+            }
+        }
+        else
+        {
+            //wait condition
+            //usleep(1000);
+        }
+    }
+}
+VC_STATUS AudioProcessor::PushBuffer(Buffer* buf)
+{
+    m_processbuf.push_back(buf);
+    VC_TRACE("processbuffer size %d", m_processbuf.size());
+    return (VC_SUCCESS);
+}
+
+Buffer* AudioProcessor::GetBuffer()
+{
+    while(m_buffers.size() == 0);
+    Buffer* buf = m_buffers.front();
+    m_buffers.pop_front();
+    VC_TRACE("m_buffer address %x", (unsigned int)buf);
+    return (buf);
+}
+
+VC_STATUS AudioProcessor::RecycleBuffer(Buffer* buf)
+{
+    buf->Reset();
+    m_buffers.push_back(buf);
+    return (VC_SUCCESS);
 }
 
 CURLWrapper::CURLWrapper(char* filename):m_header(NULL),m_formpost(NULL)

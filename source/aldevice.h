@@ -15,6 +15,7 @@
 #include <fstream>
 #include "worker.h"
 #include "audio_processor.h"
+#include "buffer.h"
 
 #define SAMPLE_RATE 16000
 #define NO_OF_CHANNELS 2

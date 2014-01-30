@@ -10,6 +10,7 @@ ALDevice::ALDevice(int threshold) :
     m_running(false),m_threshold(threshold)
 {
     m_captureBuffer = (void*) malloc(5*1024*1024);
+
     VC_CHECK(!m_captureBuffer,,"Error allocating m_captureBuffer");
     m_audioprocess = new AudioProcessor();
     m_timer = new Timer();
@@ -27,6 +28,7 @@ ALDevice::~ALDevice()
       //  free(m_captureBuffer);
     if(m_text)
         free(m_text);
+
     delete m_audioprocess;
     delete m_timer;
 
@@ -94,7 +96,7 @@ iteration2:
         }
     }
     th[k]/=i;
-    m_audioprocess->ProcessAudioData(GetData(), GetNoSamples());
+    //m_audioprocess->ProcessAudioData(GetData(), GetNoSamples());
     if(strcmp(m_text,"hello voice command"))
     {
         VC_ALL("Auto Setup is unsuccessful");
@@ -160,6 +162,7 @@ VC_STATUS ALDevice::GetCaptureDeviceList()
 void ALDevice::Task()
 {
     VC_MSG("Enter");
+    Buffer* buf =  m_audioprocess->GetBuffer();
 
     while (m_state)
     {
@@ -167,12 +170,13 @@ void ALDevice::Task()
         ALint samplesAvailable;
         bool process_data = false;
         m_samplescaptured = 0;
-        captureBufPtr = (ALshort*) m_captureBuffer;
+        captureBufPtr = (ALshort*) buf->GetData();
         int sum = 0;
         ALshort* it = captureBufPtr;
         m_timer->ResetTimer();
         m_timer->StartTimer();
         alcCaptureStart(m_capturedev);
+        ALshort* ptr = (ALshort*) buf->GetData();
         while (m_running)
         {
             alcGetIntegerv(m_capturedev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
@@ -180,16 +184,14 @@ void ALDevice::Task()
             if (samplesAvailable > 0)
             {
                 sum = 0;
-                alcCaptureSamples(m_capturedev, captureBufPtr, samplesAvailable);
+                alcCaptureSamples(m_capturedev, ptr, samplesAvailable);
                 m_samplescaptured += samplesAvailable;
-                it += samplesAvailable * 2;
+                it = (ALshort*) ptr + samplesAvailable * 2;
 
-                for(ALshort* tmp = captureBufPtr;tmp <= it;tmp++)
+                for(ALshort* tmp = (ALshort*)ptr ;tmp <= it;tmp++)
                 {
                     sum += abs((int) *tmp);
                 }
-
-                captureBufPtr += samplesAvailable * 2;
 
                 if (sum / samplesAvailable > m_threshold) //checking the amplitude/volume greater that threashold
                 {
@@ -201,13 +203,28 @@ void ALDevice::Task()
                         process_data = true;
                     }
 
-                    m_audioprocess->ProcessAudioData(m_captureBuffer, m_samplescaptured);
-                    m_samplescaptured = 0;
-                    m_captureBuffer = captureBufPtr;
-
                     VC_TRACE("amplitude:%d %f", sum / samplesAvailable, m_timer->GetTimePassed());
                 }
 
+                ptr += samplesAvailable* 2;
+
+                if(process_data && m_samplescaptured > 1024)
+                {
+#if 0
+                    buf->SetSamples(m_samplescaptured);
+                    m_audioprocess->ProcessAudioData(buf);
+                    m_samplescaptured = 0;
+#else
+                    buf->SetSamples(m_samplescaptured);
+                    m_audioprocess->PushBuffer(buf);
+                    m_samplescaptured = 0;
+#endif
+                    buf = m_audioprocess->GetBuffer();
+                    ptr = (ALshort*)buf->GetData();
+                    usleep(20000);
+                }
+
+                //captureBufPtr += samplesAvailable * 2;
                 //VC_ALL("samles %d %d",samplesAvailable,sum/samplesAvailable);
 
                 if (m_timer->GetTimePassed() >= 0.5)
@@ -216,8 +233,10 @@ void ALDevice::Task()
                     if(process_data)
                     {
                         alcCaptureStop(m_capturedev);
-
-                        if (m_audioprocess->CloseDataProcessing(m_text) == VC_SUCCESS)
+                        Buffer* buf = m_audioprocess->GetBuffer();
+                        buf->SetTag(TAG_BREAK);
+                        m_audioprocess->PushBuffer(buf);
+                        //if (m_audioprocess->CloseDataProcessing(m_text) == VC_SUCCESS)
                         {
                             VC_ALL("Received Text: %s", m_text);
                             if (!strcmp(m_text, "exit") || !strcmp(m_text, "cu") || !strcmp(m_text, "see you later") || !strcmp(m_text, "bye bye"))

@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <getopt.h>
 #include <string.h>
+#include <list>
 
 void DebugSetLevel(int level);
 int kbhit(void);
@@ -74,6 +75,14 @@ typedef enum
     VC_NOT_IMPLEMENTED,
     VC_UNDEFINED
 }VC_STATUS;
+
+typedef enum
+{
+    TAG_NONE=0,
+    TAG_START,
+    TAG_BREAK,
+    TAG_END,
+}BUF_TAG;
 
 template <typename T>
 void write(std::ofstream& stream, const T& t) {

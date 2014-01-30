@@ -10,6 +10,7 @@ FLACWrapper::FLACWrapper(char* filename):m_filename(filename)
 {
    m_encoder = FLAC__stream_encoder_new();
    VC_CHECK(m_encoder == NULL,,"Error Initializing FLAC encoder");
+   setParameters();
 }
 
 FLACWrapper::~FLACWrapper()
@@ -23,8 +24,7 @@ VC_STATUS FLACWrapper::InitiateFLACCapture()
 {
     FLAC__StreamEncoderInitStatus init_status;
 
-    setParameters();
-    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, NULL);
+    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, &m_cdata);
     VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
 
     return (VC_SUCCESS);
@@ -32,7 +32,9 @@ VC_STATUS FLACWrapper::InitiateFLACCapture()
 
 VC_STATUS FLACWrapper::CloseFLACCapture()
 {
+    VC_MSG("Enter");
     FLAC__stream_encoder_finish(m_encoder);
+    m_cdata.samples = 0;
     //usleep(5000);
     return (VC_SUCCESS);
 }
@@ -69,7 +71,7 @@ VC_STATUS FLACWrapper::setParameters()
     return (VC_SUCCESS);
 }
 
-VC_STATUS FLACWrapper::WriteData(void* data, int samples)
+int FLACWrapper::WriteData(void* data, int samples)
 {
     VC_MSG("Enter");
     FLAC__byte* buffer;
@@ -92,7 +94,7 @@ VC_STATUS FLACWrapper::WriteData(void* data, int samples)
         buffer += need * 4;
     }
 
-    return (VC_SUCCESS);
+    return (m_cdata.samples);
 }
 
 void FLACWrapper::progress_callback(const FLAC__StreamEncoder *m_encoder, FLAC__uint64 bytes_written,
@@ -100,6 +102,7 @@ void FLACWrapper::progress_callback(const FLAC__StreamEncoder *m_encoder, FLAC__
 {
     (void) m_encoder, (void) client_data;
 
+    static_cast<ClientData*>(client_data)->samples = samples_written;
     fprintf(stderr, "wrote %llu bytes, %llu samples, %u/%u frames\n", bytes_written, samples_written, frames_written, total_frames_estimate);
 }
 

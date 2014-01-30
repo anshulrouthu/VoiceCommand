@@ -14,6 +14,12 @@
 #include "FLAC/stream_encoder.h"
 #include <fstream>
 
+typedef struct client_data
+{
+    int samples;
+}ClientData;
+
+
 #define READSIZE 512
 #define SAMPLE_RATE 16000
 #define NO_OF_CHANNELS 2
@@ -24,7 +30,7 @@ class FLACWrapper
 public:
     FLACWrapper(char* filename);
     ~FLACWrapper();
-    VC_STATUS WriteData(void* data, int total_samples);
+    int WriteData(void* data, int total_samples);
     VC_STATUS setParameters();
     VC_STATUS InitiateFLACCapture();
     VC_STATUS CloseFLACCapture();
@@ -38,6 +44,7 @@ private:
     FLAC__StreamEncoder* m_encoder;
     FLAC__StreamMetadata* m_metadata[2];
     char* m_filename;
+    ClientData m_cdata;
 };
 
 #endif /* FLAC_H_ */
