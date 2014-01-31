@@ -22,6 +22,7 @@ FLACWrapper::~FLACWrapper()
 
 VC_STATUS FLACWrapper::InitiateFLACCapture()
 {
+    VC_ALL("Enter");
     FLAC__StreamEncoderInitStatus init_status;
 
     init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, &m_cdata);

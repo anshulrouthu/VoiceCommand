@@ -36,7 +36,7 @@ ALDevice::~ALDevice()
 
 VC_STATUS ALDevice::ThresholdSetup()
 {
-    VC_ALL("Initiating Calibration...");
+    VC_MSG("Initiating Calibration...");
     int i = 0,k=0;
     ALshort* ptr;
     ALint samplesAvailable;
@@ -99,10 +99,10 @@ iteration2:
     //m_audioprocess->ProcessAudioData(GetData(), GetNoSamples());
     if(strcmp(m_text,"hello voice command"))
     {
-        VC_ALL("Auto Setup is unsuccessful");
+        VC_MSG("Auto Setup is unsuccessful");
         //return (VC_STATUS);
     }
-    VC_ALL("Auto Setup is completed. Threshold level is %d %d %d",th[0],th[1],(th[0]+th[1])/2);
+    VC_MSG("Auto Setup is completed. Threshold level is %d %d %d",th[0],th[1],(th[0]+th[1])/2);
     if(!k)
     {
         k++;
@@ -177,6 +177,7 @@ void ALDevice::Task()
         m_timer->StartTimer();
         alcCaptureStart(m_capturedev);
         ALshort* ptr = (ALshort*) buf->GetData();
+        int total_samples=0;
         while (m_running)
         {
             alcGetIntegerv(m_capturedev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
@@ -186,6 +187,7 @@ void ALDevice::Task()
                 sum = 0;
                 alcCaptureSamples(m_capturedev, ptr, samplesAvailable);
                 m_samplescaptured += samplesAvailable;
+                total_samples+=samplesAvailable;
                 it = (ALshort*) ptr + samplesAvailable * 2;
 
                 for(ALshort* tmp = (ALshort*)ptr ;tmp <= it;tmp++)
@@ -199,7 +201,9 @@ void ALDevice::Task()
                     VC_MSG("Timer Reset");
                     if(!process_data)
                     {
-                        m_audioprocess->InitiateDataProcessing();
+                        Buffer* b = m_audioprocess->GetBuffer();
+                        b->SetTag(TAG_START);
+                        m_audioprocess->PushBuffer(b);
                         process_data = true;
                     }
 
@@ -224,24 +228,31 @@ void ALDevice::Task()
                     usleep(20000);
                 }
 
+               /*if(process_data && total_samples >10000)
+                {
+                    Buffer* b = m_audioprocess->GetBuffer();
+                    b->SetTag(TAG_BREAK);
+                    m_audioprocess->PushBuffer(b);
+                    total_samples = 0;
+                }*/
                 //captureBufPtr += samplesAvailable * 2;
-                //VC_ALL("samles %d %d",samplesAvailable,sum/samplesAvailable);
+                //VC_MSG("samles %d %d",samplesAvailable,sum/samplesAvailable);
 
                 if (m_timer->GetTimePassed() >= 0.5)
                 {
-                    VC_TRACE("TimeOut");
+                    VC_ALL("TimeOut");
                     if(process_data)
                     {
                         alcCaptureStop(m_capturedev);
                         Buffer* buf = m_audioprocess->GetBuffer();
-                        buf->SetTag(TAG_BREAK);
+                        buf->SetTag(TAG_END);
                         m_audioprocess->PushBuffer(buf);
                         //if (m_audioprocess->CloseDataProcessing(m_text) == VC_SUCCESS)
                         {
-                            VC_ALL("Received Text: %s", m_text);
+                            VC_MSG("Received Text: %s", m_text);
                             if (!strcmp(m_text, "exit") || !strcmp(m_text, "cu") || !strcmp(m_text, "see you later") || !strcmp(m_text, "bye bye"))
                             {
-                                VC_ALL("Exit command");
+                                VC_MSG("Exit command");
                                 StopCapture();
                             }
                         }

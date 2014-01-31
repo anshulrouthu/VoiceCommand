@@ -1,5 +1,5 @@
 #include "audio_processor.h"
-#define NUM_OF_BUFFERS 8
+#define NUM_OF_BUFFERS 32
 
 #define OLD_METHOD_PROCESSING 0
 
@@ -66,7 +66,7 @@ VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
             utterance = hypotheses["utterance"].asCString();
             strcpy(text, utterance);
             cmd[0] = '\0';
-            VC_TRACE("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
+            VC_ALL("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
             return (VC_SUCCESS);
         }
     }
@@ -142,22 +142,38 @@ void AudioProcessor::Task()
         {
             char text[2048];
             int samples;
-            VC_ALL("Thread running");
+            VC_MSG("Thread running buffer size %d", m_processbuf.size());
             Buffer* buf =  m_processbuf.front();
             m_processbuf.pop_front();
-            if (buf->GetTag() == TAG_BREAK && senddata)
+
+            if(buf->GetTag() == TAG_START)
+            {
+                InitiateDataProcessing();
+            }
+            else if (buf->GetTag() == TAG_BREAK && senddata)
             {
                 CloseDataProcessing(text);
-                VC_ALL("GotText %s",text);
                 strcat(m_text," ");
                 strcat(m_text,text);
-                VC_ALL("GotText %s",m_text);
+                VC_MSG("GotText %s",m_text);
+
                 InitiateDataProcessing();
+
+                senddata = false;
+            }
+            else if (buf->GetTag() == TAG_END)
+            {
+                CloseDataProcessing(text);
+                strcat(m_text," ");
+                strcat(m_text,text);
+                VC_MSG("GotText %s",m_text);
+                m_text[0] = '\0';
                 senddata = false;
             }
             else
             {
                 senddata=true;
+                VC_MSG("Buffer address %x",buf->GetData());
                 samples = m_flac->WriteData(buf->GetData(), buf->GetSamples());
                 RecycleBuffer(buf);
             }
@@ -165,7 +181,7 @@ void AudioProcessor::Task()
             if (samples > 5000)
             {
 
-                VC_ALL("samples written %d", samples);
+                VC_MSG("samples written %d", samples);
                 //GetText(text);
                 //m_flac->InitiateFLACCapture();
             }
