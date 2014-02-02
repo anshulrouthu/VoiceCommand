@@ -173,7 +173,6 @@ void ALDevice::Task()
         captureBufPtr = (ALshort*) buf->GetData();
         int sum = 0;
         ALshort* it = captureBufPtr;
-        m_timer->ResetTimer();
         m_timer->StartTimer();
         alcCaptureStart(m_capturedev);
         ALshort* ptr = (ALshort*) buf->GetData();
@@ -212,7 +211,7 @@ void ALDevice::Task()
 
                 ptr += samplesAvailable* 2;
 
-                if(process_data && m_samplescaptured > 1024)
+                if(process_data && m_samplescaptured > 2048)
                 {
 #if 0
                     buf->SetSamples(m_samplescaptured);
@@ -225,9 +224,19 @@ void ALDevice::Task()
 #endif
                     buf = m_audioprocess->GetBuffer();
                     ptr = (ALshort*)buf->GetData();
-                    usleep(20000);
+                }
+                else if(!process_data)
+                {
+                    usleep(200000);
                 }
 
+                if(total_samples > 40000 && (sum / samplesAvailable < m_threshold))
+                {
+                    Buffer* b = m_audioprocess->GetBuffer();
+                    b->SetTag(TAG_BREAK);
+                    m_audioprocess->PushBuffer(b);
+                    total_samples = 0;
+                }
                /*if(process_data && total_samples >10000)
                 {
                     Buffer* b = m_audioprocess->GetBuffer();
@@ -238,9 +247,9 @@ void ALDevice::Task()
                 //captureBufPtr += samplesAvailable * 2;
                 //VC_MSG("samles %d %d",samplesAvailable,sum/samplesAvailable);
 
-                if (m_timer->GetTimePassed() >= 0.5)
+                if (m_timer->GetTimePassed() >= 800)
                 {
-                    VC_ALL("TimeOut");
+                    VC_MSG("TimeOut");
                     if(process_data)
                     {
                         alcCaptureStop(m_capturedev);

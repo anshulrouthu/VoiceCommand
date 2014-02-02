@@ -25,6 +25,7 @@ VC_STATUS FLACWrapper::InitiateFLACCapture()
     VC_ALL("Enter");
     FLAC__StreamEncoderInitStatus init_status;
 
+    setParameters();
     init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, &m_cdata);
     VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
 
@@ -33,10 +34,9 @@ VC_STATUS FLACWrapper::InitiateFLACCapture()
 
 VC_STATUS FLACWrapper::CloseFLACCapture()
 {
-    VC_MSG("Enter");
+    VC_ALL("Enter");
     FLAC__stream_encoder_finish(m_encoder);
     m_cdata.samples = 0;
-    //usleep(5000);
     return (VC_SUCCESS);
 }
 VC_STATUS FLACWrapper::setParameters()

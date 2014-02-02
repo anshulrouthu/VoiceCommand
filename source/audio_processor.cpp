@@ -1,5 +1,5 @@
 #include "audio_processor.h"
-#define NUM_OF_BUFFERS 32
+#define NUM_OF_BUFFERS 128
 
 #define OLD_METHOD_PROCESSING 0
 
@@ -140,7 +140,7 @@ void AudioProcessor::Task()
     {
         if(m_processbuf.size()>0)
         {
-            char text[2048];
+            char text[2048] = "";
             int samples;
             VC_MSG("Thread running buffer size %d", m_processbuf.size());
             Buffer* buf =  m_processbuf.front();
@@ -152,11 +152,13 @@ void AudioProcessor::Task()
             }
             else if (buf->GetTag() == TAG_BREAK && senddata)
             {
+                VC_ALL("GOT TAG_BREAK");
                 CloseDataProcessing(text);
+
                 strcat(m_text," ");
                 strcat(m_text,text);
                 VC_MSG("GotText %s",m_text);
-
+                usleep(10000);
                 InitiateDataProcessing();
 
                 senddata = false;
@@ -202,7 +204,7 @@ VC_STATUS AudioProcessor::PushBuffer(Buffer* buf)
 
 Buffer* AudioProcessor::GetBuffer()
 {
-    while(m_buffers.size() == 0);
+    while(m_buffers.size() == 0){VC_ALL("Low on Buffers");};
     Buffer* buf = m_buffers.front();
     m_buffers.pop_front();
     VC_TRACE("m_buffer address %x", (unsigned int)buf);

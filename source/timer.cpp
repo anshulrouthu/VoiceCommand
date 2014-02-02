@@ -8,23 +8,42 @@
 #include <unistd.h>
 #include "timer.h"
 
-Timer::Timer(): m_start_time(0)
+Timer::Timer()
 {
 }
 
 void Timer::StartTimer()
 {
-    m_start_time = clock();
+    gettimeofday(&m_start_time, NULL);
 }
 
 void Timer::ResetTimer()
 {
-    m_start_time = clock();
+    gettimeofday(&m_start_time, NULL);
 }
 
-float Timer::GetTimePassed()
+long Timer::GetTimePassed()
 {
-    //return (difftime(time(NULL),m_start_time));
-    return ((clock()-m_start_time)/CLOCKS_PER_SEC);
+    long mtime, seconds, useconds;
+
+    gettimeofday(&m_end_time, NULL);
+    seconds  = m_end_time.tv_sec  - m_start_time.tv_sec;
+    useconds = m_end_time.tv_usec - m_start_time.tv_usec;
+
+    mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+
+    return (mtime);
 }
 
+long Timer::StopTimer()
+{
+    long mtime, seconds, useconds;
+
+    gettimeofday(&m_end_time, NULL);
+    seconds  = m_end_time.tv_sec  - m_start_time.tv_sec;
+    useconds = m_end_time.tv_usec - m_start_time.tv_usec;
+
+    mtime = ((seconds) * 1000 + useconds/1000.0) + 0.5;
+
+    return (mtime);
+}

@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
         c = getch();
         DBG_PRINT(DBG_TRACE,"key hit %c",c);
 
-        usleep(10000);
+        usleep(100000);
     }
     //device->Init();
     //timer->StartTimer();

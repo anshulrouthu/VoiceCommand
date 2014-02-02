@@ -8,7 +8,7 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
-#include<time.h>
+#include<sys/time.h>
 #include<stdio.h>
 #include "worker.h"
 
@@ -19,14 +19,16 @@ public:
     virtual ~Timer(){}
     void StartTimer();
     void ResetTimer();
-    float GetTimePassed();
+    long GetTimePassed();
+    long StopTimer();
 
 private:
     virtual const char* c_str()
     {
         return ("Timer");
     }
-    clock_t m_start_time;
+    timeval m_start_time;
+    timeval m_end_time;
 };
 
 
