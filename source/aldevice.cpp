@@ -207,7 +207,7 @@ void ALDevice::Task()
                         process_data = true;
                     }
 
-                    VC_TRACE("amplitude:%d %f", avg_amplitude, m_timer->GetTimePassed());
+                    VC_TRACE("amplitude:%d %ld", avg_amplitude, m_timer->GetTimePassed());
                 }
 
                 ptr += samplesAvailable* 2;
@@ -222,7 +222,9 @@ void ALDevice::Task()
                 }
                 else if(!process_data)
                 {
-                    usleep(50000);
+                    m_mutex.Lock();
+                    m_cv.Wait(50);
+                    m_mutex.Unlock();
                 }
 
                 if(total_samples > 40000 && (avg_amplitude < m_threshold * 3 / 8))
@@ -248,7 +250,9 @@ void ALDevice::Task()
             }
             else
             {
-                usleep(50000);
+                m_mutex.Lock();
+                m_cv.Wait(50);
+                m_mutex.Unlock();
             }
         }
     }

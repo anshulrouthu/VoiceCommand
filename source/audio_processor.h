@@ -31,7 +31,7 @@ class AudioProcessor: public WorkerThread
 {
 public:
     AudioProcessor();
-    ~AudioProcessor();
+    virtual ~AudioProcessor();
     VC_STATUS ProcessAudioData(Buffer* buf);
     VC_STATUS PushBuffer(Buffer* buf);
     VC_STATUS InitiateDataProcessing();

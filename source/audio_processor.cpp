@@ -19,13 +19,21 @@ AudioProcessor::AudioProcessor()
 AudioProcessor::~AudioProcessor()
 {
     stop();
+
+    m_mutex.Lock();
+    m_cv.Notify();
+    m_mutex.Unlock();
+
     join();
+
     delete m_flac;
     delete m_curl;
+
     for(std::list<Buffer*>::iterator it = m_buffers.begin(); it != m_buffers.end() ; it++)
     {
         delete *it;
     }
+
     m_buffers.clear();
 }
 
@@ -178,14 +186,25 @@ void AudioProcessor::Task()
         else
         {
             //wait condition
-            usleep(100000);
+            while (m_processbuf.size() == 0 && m_state)
+            {
+                m_mutex.Lock();
+                m_cv.Wait();
+                m_mutex.Unlock();
+            }
         }
     }
 }
+
 VC_STATUS AudioProcessor::PushBuffer(Buffer* buf)
 {
-    m_processbuf.push_back(buf);
     VC_TRACE("processbuffer size %d", m_processbuf.size());
+    m_processbuf.push_back(buf);
+
+    m_mutex.Lock();
+    m_cv.Notify();
+    m_mutex.Unlock();
+
     return (VC_SUCCESS);
 }
 
