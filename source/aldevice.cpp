@@ -166,35 +166,36 @@ void ALDevice::Task()
 
     while (m_state)
     {
-        ALshort* captureBufPtr;
         ALint samplesAvailable;
         bool process_data = false;
         m_samplescaptured = 0;
-        captureBufPtr = (ALshort*) buf->GetData();
-        int sum = 0;
-        ALshort* it = captureBufPtr;
-        m_timer->StartTimer();
-        alcCaptureStart(m_capturedev);
         ALshort* ptr = (ALshort*) buf->GetData();
         int total_samples=0;
+
+        alcCaptureStart(m_capturedev);
+        m_timer->StartTimer();
+
         while (m_running)
         {
             alcGetIntegerv(m_capturedev, ALC_CAPTURE_SAMPLES, 1, &samplesAvailable);
 
             if (samplesAvailable > 0)
             {
-                sum = 0;
                 alcCaptureSamples(m_capturedev, ptr, samplesAvailable);
                 m_samplescaptured += samplesAvailable;
                 total_samples+=samplesAvailable;
-                it = (ALshort*) ptr + samplesAvailable * 2;
 
-                for(ALshort* tmp = (ALshort*)ptr ;tmp <= it;tmp++)
+                ALshort* tmp = (ALshort*)ptr;
+                int sum = 0, avg_amplitude = 0;
+
+                for(ALint i = 0; i <= samplesAvailable * 2; i++)
                 {
-                    sum += abs((int) *tmp);
+                    sum += abs((int) *tmp++);
                 }
 
-                if (sum / samplesAvailable > m_threshold) //checking the amplitude/volume greater that threashold
+                avg_amplitude = sum / samplesAvailable;
+
+                if (avg_amplitude > m_threshold) //checking the amplitude/volume greater that threashold
                 {
                     m_timer->ResetTimer();
                     VC_MSG("Timer Reset");
@@ -206,46 +207,31 @@ void ALDevice::Task()
                         process_data = true;
                     }
 
-                    VC_TRACE("amplitude:%d %f", sum / samplesAvailable, m_timer->GetTimePassed());
+                    VC_TRACE("amplitude:%d %f", avg_amplitude, m_timer->GetTimePassed());
                 }
 
                 ptr += samplesAvailable* 2;
 
                 if(process_data && m_samplescaptured > 2048)
                 {
-#if 0
-                    buf->SetSamples(m_samplescaptured);
-                    m_audioprocess->ProcessAudioData(buf);
-                    m_samplescaptured = 0;
-#else
                     buf->SetSamples(m_samplescaptured);
                     m_audioprocess->PushBuffer(buf);
                     m_samplescaptured = 0;
-#endif
                     buf = m_audioprocess->GetBuffer();
                     ptr = (ALshort*)buf->GetData();
                 }
                 else if(!process_data)
                 {
-                    usleep(200000);
+                    usleep(50000);
                 }
 
-                if(total_samples > 40000 && (sum / samplesAvailable < m_threshold))
+                if(total_samples > 40000 && (avg_amplitude < m_threshold * 3 / 8))
                 {
                     Buffer* b = m_audioprocess->GetBuffer();
                     b->SetTag(TAG_BREAK);
                     m_audioprocess->PushBuffer(b);
                     total_samples = 0;
                 }
-               /*if(process_data && total_samples >10000)
-                {
-                    Buffer* b = m_audioprocess->GetBuffer();
-                    b->SetTag(TAG_BREAK);
-                    m_audioprocess->PushBuffer(b);
-                    total_samples = 0;
-                }*/
-                //captureBufPtr += samplesAvailable * 2;
-                //VC_MSG("samles %d %d",samplesAvailable,sum/samplesAvailable);
 
                 if (m_timer->GetTimePassed() >= 800)
                 {
@@ -253,21 +239,16 @@ void ALDevice::Task()
                     if(process_data)
                     {
                         alcCaptureStop(m_capturedev);
-                        Buffer* buf = m_audioprocess->GetBuffer();
-                        buf->SetTag(TAG_END);
-                        m_audioprocess->PushBuffer(buf);
-                        //if (m_audioprocess->CloseDataProcessing(m_text) == VC_SUCCESS)
-                        {
-                            VC_MSG("Received Text: %s", m_text);
-                            if (!strcmp(m_text, "exit") || !strcmp(m_text, "cu") || !strcmp(m_text, "see you later") || !strcmp(m_text, "bye bye"))
-                            {
-                                VC_MSG("Exit command");
-                                StopCapture();
-                            }
-                        }
+                        Buffer* b = m_audioprocess->GetBuffer();
+                        b->SetTag(TAG_END);
+                        m_audioprocess->PushBuffer(b);
                     }
                     break;
                 }
+            }
+            else
+            {
+                usleep(50000);
             }
         }
     }

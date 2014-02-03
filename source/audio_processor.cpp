@@ -1,8 +1,6 @@
 #include "audio_processor.h"
 #define NUM_OF_BUFFERS 128
 
-#define OLD_METHOD_PROCESSING 0
-
 AudioProcessor::AudioProcessor()
 {
     m_flac = new FLACWrapper((char*)VC_AUDIO_FILENAME);
@@ -39,7 +37,6 @@ VC_STATUS AudioProcessor::InitiateDataProcessing()
 
 VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
 {
-#if not OLD_METHOD_PROCESSING
     Json::Value root;
     Json::Value hypotheses;
     const char* utterance;
@@ -66,19 +63,11 @@ VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
             utterance = hypotheses["utterance"].asCString();
             strcpy(text, utterance);
             cmd[0] = '\0';
-            VC_ALL("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
+            VC_MSG("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
             return (VC_SUCCESS);
         }
     }
-#else
-    VC_ALL("buffers size %d",m_processbuf.size());
-    while(m_processbuf.size()!=0);
-    m_flac->CloseFLACCapture();
-    strcpy(text,m_text);
-    m_text[0] = '\0';
-    VC_ALL("Got text is %s",m_text);
 
-#endif
     return (VC_SUCCESS);
 }
 
@@ -87,12 +76,8 @@ VC_STATUS AudioProcessor::ProcessAudioData(Buffer* buf)
     VC_MSG("Enter");
 
     //just call flac write data to file
-    int frames = m_flac->WriteData(buf->GetData(), buf->GetSamples());
+    m_flac->WriteData(buf->GetData(), buf->GetSamples());
     RecycleBuffer(buf);
-    if(frames>2)
-    {
-        //send the data to google save the text untill close capture is closes
-    }
 
     return (VC_FAILURE);
 }
@@ -141,8 +126,7 @@ void AudioProcessor::Task()
         if(m_processbuf.size()>0)
         {
             char text[2048] = "";
-            int samples;
-            VC_MSG("Thread running buffer size %d", m_processbuf.size());
+            VC_TRACE("Thread running buffer size %d", m_processbuf.size());
             Buffer* buf =  m_processbuf.front();
             m_processbuf.pop_front();
 
@@ -152,46 +136,49 @@ void AudioProcessor::Task()
             }
             else if (buf->GetTag() == TAG_BREAK && senddata)
             {
-                VC_ALL("GOT TAG_BREAK");
+                VC_MSG("GOT TAG_BREAK");
                 CloseDataProcessing(text);
 
                 strcat(m_text," ");
                 strcat(m_text,text);
-                VC_MSG("GotText %s",m_text);
-                usleep(10000);
+                VC_ALL("GotText %s\n",m_text);
+                usleep(5000);
                 InitiateDataProcessing();
 
                 senddata = false;
             }
             else if (buf->GetTag() == TAG_END)
             {
+                VC_MSG("GOT TAG_END");
                 CloseDataProcessing(text);
                 strcat(m_text," ");
                 strcat(m_text,text);
-                VC_MSG("GotText %s",m_text);
+                VC_ALL("GotText %s\n",m_text);
+
+                //TODO:improve this notification mechanism
+
+                if (strcmp(m_text," "))
+                {
+                    char notifycmd[4 * 1000] = "notify-send -t 10 \"Received Text\" \"";
+                    strcat(notifycmd, m_text);
+                    strcat(notifycmd, "\"");
+                    system("pkill notify-osd");
+                    system(notifycmd);
+                }
                 m_text[0] = '\0';
                 senddata = false;
             }
             else
             {
                 senddata=true;
-                VC_MSG("Buffer address %x",buf->GetData());
-                samples = m_flac->WriteData(buf->GetData(), buf->GetSamples());
+                m_flac->WriteData(buf->GetData(), buf->GetSamples());
                 RecycleBuffer(buf);
-            }
-
-            if (samples > 5000)
-            {
-
-                VC_MSG("samples written %d", samples);
-                //GetText(text);
-                //m_flac->InitiateFLACCapture();
             }
         }
         else
         {
             //wait condition
-            //usleep(1000);
+            usleep(100000);
         }
     }
 }
@@ -204,7 +191,10 @@ VC_STATUS AudioProcessor::PushBuffer(Buffer* buf)
 
 Buffer* AudioProcessor::GetBuffer()
 {
-    while(m_buffers.size() == 0){VC_ALL("Low on Buffers");};
+    while (m_buffers.size() == 0)
+    {
+        VC_ERR("Low on Buffers");
+    }
     Buffer* buf = m_buffers.front();
     m_buffers.pop_front();
     VC_TRACE("m_buffer address %x", (unsigned int)buf);

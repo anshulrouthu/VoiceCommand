@@ -22,7 +22,7 @@ FLACWrapper::~FLACWrapper()
 
 VC_STATUS FLACWrapper::InitiateFLACCapture()
 {
-    VC_ALL("Enter");
+    VC_MSG("Enter");
     FLAC__StreamEncoderInitStatus init_status;
 
     setParameters();
@@ -34,7 +34,7 @@ VC_STATUS FLACWrapper::InitiateFLACCapture()
 
 VC_STATUS FLACWrapper::CloseFLACCapture()
 {
-    VC_ALL("Enter");
+    VC_MSG("Enter");
     FLAC__stream_encoder_finish(m_encoder);
     m_cdata.samples = 0;
     return (VC_SUCCESS);
@@ -74,7 +74,7 @@ VC_STATUS FLACWrapper::setParameters()
 
 int FLACWrapper::WriteData(void* data, int samples)
 {
-    VC_MSG("Enter");
+    VC_TRACE("Enter");
     FLAC__byte* buffer;
     buffer = (FLAC__byte*) data;
     size_t left = (size_t) samples;
