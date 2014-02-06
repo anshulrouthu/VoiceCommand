@@ -7,15 +7,18 @@
 
 #include "buffer.h"
 
-Buffer::Buffer():m_data(NULL),m_size(0)
+Buffer::Buffer() :
+    m_data(NULL),
+    m_size(0),
+    m_tag(TAG_NONE)
 {
-    m_data = malloc(100*1024);
-    VC_CHECK(m_data == NULL,,"Error allocating buffer");
+    m_data = malloc(100 * 1024);
+    VC_CHECK(m_data == NULL,, "Error allocating buffer");
 }
 
 Buffer::~Buffer()
 {
-    if(m_data)
+    if (m_data)
         free(m_data);
 }
 
@@ -34,7 +37,6 @@ size_t Buffer::GetSize()
 {
     return (m_size);
 }
-
 
 int Buffer::GetSamples()
 {

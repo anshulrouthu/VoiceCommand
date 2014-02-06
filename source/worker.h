@@ -5,10 +5,15 @@
  *      Author: anshul
  */
 
+/**
+ * @file worker.h
+ *
+ * Main interface for all the threads, mutexs and condition variables in the application.
+ *
+ */
 #ifndef WORKER_THREAD_H_
 #define WORKER_THREAD_H_
 
-#include<stdio.h>
 #include<pthread.h>
 #include<sys/time.h>
 #include "utils.h"
@@ -18,6 +23,9 @@ static int const NSEC_PER_SEC = 1000000000;
 
 class ConditionVariable;
 
+/**
+ *  A wrapper object for pthread mutex. that allows easy locking and unlocking
+ */
 class Mutex
 {
     friend class ConditionVariable;
@@ -31,6 +39,9 @@ private:
 
 };
 
+/**
+ * A wrapper object for pthread condition variables. that allows easy wait and signal event
+ */
 class ConditionVariable
 {
 public:
@@ -39,18 +50,21 @@ public:
     int Notify();
     int Wait(int millisconds = WAIT_FOREVER);
 private:
-    pthread_cond_t  m_condition;
+    pthread_cond_t m_condition;
     Mutex& m_mutex;
 };
 
+/**
+ * An interface for all the threads in the application.
+ */
 class WorkerThread
 {
 public:
     WorkerThread();
     virtual ~WorkerThread();
-    VC_STATUS start();
-    int join();
-    void stop();
+    VC_STATUS Start();
+    int Join();
+    void Stop();
 private:
     virtual const char* c_str()
     {

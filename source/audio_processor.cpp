@@ -12,19 +12,19 @@ AudioProcessor::AudioProcessor()
         m_buffers.push_back(buf);
     }
 #if not OLD_METHOD_PROCESSING
-    start();
+    Start();
 #endif
 }
 
 AudioProcessor::~AudioProcessor()
 {
-    stop();
+    Stop();
 
     m_mutex.Lock();
     m_cv.Notify();
     m_mutex.Unlock();
 
-    join();
+    Join();
 
     delete m_flac;
     delete m_curl;

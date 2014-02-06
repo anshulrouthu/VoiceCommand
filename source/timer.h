@@ -10,27 +10,27 @@
 
 #include<sys/time.h>
 #include<stdio.h>
-#include "worker.h"
 
+/**
+ * A simple timer object. that can be used for timer based operations
+ */
 class Timer
 {
 public:
     Timer();
-    virtual ~Timer(){}
+    ~Timer() {}
     void StartTimer();
     void ResetTimer();
     long GetTimePassed();
     long StopTimer();
 
 private:
-    virtual const char* c_str()
+    const char* c_str()
     {
         return ("Timer");
     }
     timeval m_start_time;
     timeval m_end_time;
 };
-
-
 
 #endif /* TIMER_H_ */

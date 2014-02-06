@@ -1,9 +1,15 @@
+
+
+#ifndef AUDIO_PROCESSOR_H_
+#define AUDIO_PROCESSOR_H_
+
 #include "utils.h"
 #include "flac.h"
 #include "timer.h"
 #include <json/json.h>
 #include "curl/curl.h"
 #include "buffer.h"
+#include "worker.h"
 
 #define VC_SPEECH_ENGINE "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\""
 #define VC_AUDIO_FILENAME "audio.flac"
@@ -53,3 +59,5 @@ private:
     std::list<Buffer*> m_processbuf;
     char m_text[4*1024];
 };
+
+#endif /*AUDIO_PROCESSOR_H_*/

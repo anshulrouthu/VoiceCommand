@@ -1,0 +1,8 @@
+/*! \mainpage VoiceCommand Documentation
+ *
+ * \section intro_sec Introduction
+ *
+ * This is a simple voice command utility built using google voice api.
+ *
+ *
+ */

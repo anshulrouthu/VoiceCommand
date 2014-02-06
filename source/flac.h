@@ -12,7 +12,6 @@
 #include <ctime>
 #include "FLAC/metadata.h"
 #include "FLAC/stream_encoder.h"
-#include <fstream>
 
 typedef struct client_data
 {

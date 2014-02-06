@@ -24,7 +24,7 @@ void DebugSetLevel(int level);
 int kbhit(void);
 int getch(void);
 
-/*
+/**
  * Debugging code: helps us in easy debugging of the application
  */
 class vcDebug
@@ -46,7 +46,7 @@ private:
 
 #define DBG_PRINT(level, format, args...)  DBGPRINT(level, ("%-5d%s() - " format "\n", __LINE__, __FUNCTION__, ##args))
 
-//inorder to use the following debug function needs to implement c_str() function
+//To use the following debug macros, the class should implement c_str() method
 
 #define VC_DBG(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format "\n", __LINE__, c_str(), __FUNCTION__, ##args))
 #define VC_DBG_ERR(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format " in %s\n", __LINE__, c_str(), __FUNCTION__, ##args, __FILE__))
@@ -54,7 +54,6 @@ private:
 #define VC_ALL(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
 #define VC_MSG(format, args...)  VC_DBG(DBG_MESSAGE,   format, ##args)
 #define VC_TRACE(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)
-
 
 #define VC_CHECK(condition, fail, msg, args...)  \
 do                                      \
@@ -67,6 +66,16 @@ do                                      \
 } while (0)
 
 //debugging code end
+
+
+typedef enum
+{
+    VC_CAPTURE_DEVICE=0,
+    VC_AUDIO_PROCESSOR,
+    VC_TEXT_PROCESSOR,
+    VC_COMMAND_PROCESSOR
+
+}VC_DEVICETYPE;
 
 typedef enum
 {

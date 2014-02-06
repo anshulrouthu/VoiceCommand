@@ -6,6 +6,6 @@
  */
 #include "utils.h"
 #include "timer.h"
-#include "aldevice.h"
+#include "capturedevice.h"
 #include "command_processor.h"
 #include "flac.h"

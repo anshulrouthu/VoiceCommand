@@ -6,7 +6,7 @@
  */
 #include "utils.h"
 #include "timer.h"
-#include "aldevice.h"
+#include "capturedevice.h"
 #include "command_processor.h"
 #include "console_command.h"
 #include "flac.h"
@@ -15,13 +15,13 @@ int main(int argc, char* argv[])
 {
     int c;
     int threshold = 1500;
-    bool autosetup=false;
-    while ((c = getopt (argc, argv, "s?l:d:t:")) != -1)
+    bool autosetup = false;
+    while ((c = getopt(argc, argv, "s?l:d:t:")) != -1)
     {
         switch (c)
         {
         case 'd':
-            DebugSetLevel(strtol(optarg,NULL,10));
+            DebugSetLevel(strtol(optarg, NULL, 10));
             break;
         case 'l':
             //device->GetCaptureDeviceList();
@@ -31,15 +31,15 @@ int main(int argc, char* argv[])
             autosetup = true;
             break;
         case 't':
-            threshold = (int)strtol(optarg,NULL,10);
-            DBG_PRINT(DBG_TRACE,"Audio Volume threshold: %d",threshold);
+            threshold = (int) strtol(optarg, NULL, 10);
+            DBG_PRINT(DBG_TRACE, "Audio Volume threshold: %d", threshold);
             break;
         default:
             break;
         }
     }
 
-    ALDevice* device = new ALDevice(threshold);
+    CaptureDevice* device = new CaptureDevice(threshold);
     if (autosetup)
     {
         device->ThresholdSetup();
@@ -47,11 +47,11 @@ int main(int argc, char* argv[])
 
     device->StartCapture();
 
-    while(c!='q')
+    while (c != 'q')
     {
-        DBG_PRINT(DBG_TRACE,"Please hit 'q' to exit");
+        DBG_PRINT(DBG_TRACE, "Please hit 'q' to exit");
         c = getch();
-        DBG_PRINT(DBG_TRACE,"key hit %c",c);
+        DBG_PRINT(DBG_TRACE, "key hit %c", c);
 
         usleep(100000);
     }
@@ -59,15 +59,13 @@ int main(int argc, char* argv[])
     //timer->StartTimer();
     //while(!kbhit());
     device->StopCapture();
-    device->join();
+    device->Join();
     //device->StopCapture();
     //timer->ResetTimer();
     //device->CreateWAV();
     //writeWAVData("audio.wav", (ALshort*) device->GetData(), device->GetNoSamples() * 2, 16000, 2);
     delete device;
 
-    return(0);
+    return (0);
 }
-
-
 

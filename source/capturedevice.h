@@ -1,8 +1,11 @@
-/*
- * aldevice.h
+/**
+ * @file capturedevice.h
  *
- *  Created on: Jan 9, 2014
- *      Author: anshul
+ * Capturedevice is the main source for the audio data to the application.
+ * This device captured the audio data when ever there is any
+ *
+ *   Created on: Jan 9, 2014
+ *       Author: anshul routhu <anshul.m67@gmail.com>
  */
 
 #ifndef ALDEVICE_H_
@@ -12,7 +15,6 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include "flac.h"
-#include <fstream>
 #include "worker.h"
 #include "audio_processor.h"
 #include "buffer.h"
@@ -20,42 +22,38 @@
 #define SAMPLE_RATE 16000
 #define NO_OF_CHANNELS 2
 
-class ALDevice: public WorkerThread
+/**
+ * Capture Device Class that captures audio data continuously.
+ * This class is responsible for capture of raw audio pcm data
+ * This is a wrapper function around OpenAL library
+ */
+class CaptureDevice: public WorkerThread
 {
 public:
-    ALDevice(int threashold);
-    virtual ~ALDevice();
-    void* GetData();
-    void CreateFLAC();
-    void PlayAudio();
-    int GetNoSamples();
+    CaptureDevice(int threashold);
+    virtual ~CaptureDevice();
     void StartCapture();
     void StopCapture();
-    VC_STATUS GetCaptureDeviceList();
+    VC_STATUS GetCaptureDeviceList(char** list);
     VC_STATUS ThresholdSetup();
 
 private:
-    virtual const char*  c_str()
+    virtual const char* c_str()
     {
-        return ("ALDevice");
+        return ("CaptureDevice");
     }
+    virtual void Task();
     VC_STATUS OpenPlaybackDevice();
     VC_STATUS OpenCaptureDevice();
     const char* GetCaptureDevice();
     const char* GetPlaybackDevice();
-    virtual void Task();
     ALCdevice* m_playbackdev;
     ALCdevice* m_capturedev;
-    void* m_captureBuffer;
-    ALint m_samplescaptured;
     bool m_running;
     Timer* m_timer;
     AudioProcessor* m_audioprocess;
     int m_threshold;
-    char* m_text;
 
 };
-
-
 
 #endif /* ALDEVICE_H_ */
