@@ -10,12 +10,26 @@
 
 #include "utils.h"
 #include "buffer.h"
-#include "capturedevice.h"
-#include "audio_processor.h"
 
 class InputPort;
 class OutputPort;
 class ADevice;
+
+/**
+ * Input parameters for the devices
+ */
+typedef struct
+{
+    int threshold; //Threshold audio input level
+}InputParams;
+
+/**
+ * Output parameters from the devices
+ */
+typedef struct
+{
+    char** device_list; //Hardware devices on the system
+}OutputParams;
 
 /**
  * A pipe that maintains all the devices and their connections
@@ -29,8 +43,7 @@ public:
     /**
      * Query the pipe for available devices
      */
-    ADevice* GetDevice(VC_DEVICETYPE dev, char* name);
-
+    ADevice* GetDevice(VC_DEVICETYPE dev, const char* name);
     VC_STATUS ConnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS DisconnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS ConnectPorts(InputPort* input,OutputPort* output);
@@ -49,7 +62,7 @@ private:
 class ADevice
 {
 public:
-    ADevice(const char* name) {};
+    ADevice() {};
     virtual ~ADevice() {}
     virtual VC_STATUS Initialize()=0;
 
@@ -72,6 +85,16 @@ public:
      * Send a command to device. This method triggers the device to start or stop
      */
     virtual VC_STATUS SendCommand(VC_CMD cmd)=0;
+
+    /**
+     * Sets the required parameters for device
+     */
+    virtual VC_STATUS SetParameters(const InputParams* params)=0;
+
+    /**
+     * Gets the required parameters from device
+     */
+    virtual VC_STATUS GetParameters(OutputParams* params)=0;
 
 };
 

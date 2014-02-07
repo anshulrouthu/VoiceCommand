@@ -10,12 +10,15 @@
 #include "command_processor.h"
 #include "console_command.h"
 #include "flac.h"
+#include "apipe.h"
 
 int main(int argc, char* argv[])
 {
     int c;
     int threshold = 1500;
     bool autosetup = false;
+    ADevice* src;
+    ADevice* sink;
     while ((c = getopt(argc, argv, "s?l:d:t:")) != -1)
     {
         switch (c)
@@ -39,13 +42,19 @@ int main(int argc, char* argv[])
         }
     }
 
-    CaptureDevice* device = new CaptureDevice(threshold);
-    if (autosetup)
-    {
-        device->ThresholdSetup();
-    }
+    APipe* pipe = new APipe("Pipe 0");
+    src = pipe->GetDevice(VC_CAPTURE_DEVICE,"CaptureDevice 0");
+    sink = pipe->GetDevice(VC_AUDIO_PROCESSOR,"AudioProcessor 0");
 
-    device->StartCapture();
+    src->Initialize();
+    sink->Initialize();
+    InputParams params;
+    params.threshold = threshold;
+    src->SetParameters(&params);
+
+    pipe->ConnectDevices(src,sink);
+    src->SendCommand(VC_CMD_START);
+    sink->SendCommand(VC_CMD_START);
 
     while (c != 'q')
     {
@@ -53,18 +62,15 @@ int main(int argc, char* argv[])
         c = getch();
         DBG_PRINT(DBG_TRACE, "key hit %c", c);
 
-        usleep(100000);
+        usleep(10000);
     }
-    //device->Init();
-    //timer->StartTimer();
-    //while(!kbhit());
-    device->StopCapture();
-    device->Join();
-    //device->StopCapture();
-    //timer->ResetTimer();
-    //device->CreateWAV();
-    //writeWAVData("audio.wav", (ALshort*) device->GetData(), device->GetNoSamples() * 2, 16000, 2);
-    delete device;
+
+    src->SendCommand(VC_CMD_STOP);
+    sink->SendCommand(VC_CMD_STOP);
+    pipe->DisconnectDevices(src,sink);
+
+    delete src;
+    delete sink;
 
     return (0);
 }

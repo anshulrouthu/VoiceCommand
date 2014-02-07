@@ -16,8 +16,9 @@
 #include <AL/alc.h>
 #include "flac.h"
 #include "worker.h"
-#include "audio_processor.h"
 #include "buffer.h"
+#include "apipe.h"
+#include "timer.h"
 
 #define SAMPLE_RATE 16000
 #define NO_OF_CHANNELS 2
@@ -27,11 +28,20 @@
  * This class is responsible for capture of raw audio pcm data
  * This is a wrapper function around OpenAL library
  */
-class CaptureDevice: public WorkerThread
+class CaptureDevice: public WorkerThread, public ADevice
 {
 public:
-    CaptureDevice(int threashold);
+    CaptureDevice(const char* name);
     virtual ~CaptureDevice();
+
+    virtual VC_STATUS Initialize();
+    virtual VC_STATUS Notify();
+    virtual InputPort* Input(int portno);
+    virtual OutputPort* Output(int portno);
+    virtual VC_STATUS SendCommand(VC_CMD cmd);
+    virtual VC_STATUS SetParameters(const InputParams* params);
+    virtual VC_STATUS GetParameters(OutputParams* params);
+
     void StartCapture();
     void StopCapture();
     VC_STATUS GetCaptureDeviceList(char** list);
@@ -40,7 +50,7 @@ public:
 private:
     virtual const char* c_str()
     {
-        return ("CaptureDevice");
+        return (m_name);
     }
     virtual void Task();
     VC_STATUS OpenPlaybackDevice();
@@ -51,10 +61,12 @@ private:
     ALCdevice* m_capturedev;
     bool m_running;
     Timer* m_timer;
-    AudioProcessor* m_audioprocess;
     int m_threshold;
     Mutex m_mutex;
     ConditionVariable m_cv;
+    const char* m_name;
+    InputPort* m_input;
+    OutputPort* m_output;
 
 };
 

@@ -14,14 +14,12 @@
  * Capturedevice constructor. Initializes the threashold level of input audio level
  * @param thr threshold input level
  */
-CaptureDevice::CaptureDevice(int thr) :
+CaptureDevice::CaptureDevice(const char* name) :
     m_running(false),
-    m_threshold(thr),
-    m_cv(m_mutex)
+    m_threshold(2000),
+    m_cv(m_mutex),
+    m_name(name)
 {
-    m_audioprocess = new AudioProcessor();
-    m_timer = new Timer();
-    OpenCaptureDevice();
 }
 
 /**
@@ -33,9 +31,96 @@ CaptureDevice::~CaptureDevice()
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
 
-    delete m_audioprocess;
-    delete m_timer;
 
+    delete m_timer;
+    delete m_input;
+    delete m_output;
+
+}
+
+/**
+ * Initialize the device and get all the resources
+ */
+VC_STATUS CaptureDevice::Initialize()
+{
+    m_timer = new Timer();
+    m_input = new InputPort("Inputport 0",this);
+    m_output = new OutputPort("Ouputport 0",this);
+
+    OpenCaptureDevice();
+
+    return (VC_SUCCESS);
+}
+
+/**
+ * Return the input port of the device
+ * @return m_input
+ */
+InputPort* CaptureDevice::Input(int portno)
+{
+    return (m_input);
+}
+
+/**
+ * Return the output port of the device
+ * @return m_output
+ */
+OutputPort* CaptureDevice::Output(int portno)
+{
+    return (m_output);
+}
+
+/**
+ * Notifies the device of any event
+ */
+VC_STATUS CaptureDevice::Notify()
+{
+    //TODO: update the api to notify different type of events
+    m_mutex.Lock();
+    m_cv.Notify();
+    m_mutex.Unlock();
+
+    return (VC_SUCCESS);
+}
+
+/**
+ * Send a command to the device
+ */
+VC_STATUS CaptureDevice::SendCommand(VC_CMD cmd)
+{
+    switch (cmd)
+    {
+    case VC_CMD_START:
+        Start();
+        usleep(10000);
+        m_running = true;
+        break;
+    case VC_CMD_STOP:
+        m_running = false;
+        Stop();
+        alcCaptureStop(m_capturedev);
+        break;
+    }
+    return (VC_SUCCESS);
+}
+
+/**
+ * Set the required parameters for device
+ * @paran params
+ */
+VC_STATUS CaptureDevice::SetParameters(const InputParams* params)
+{
+    m_threshold = params->threshold;
+    return (VC_SUCCESS);
+}
+
+/**
+ * Get the required parameters from device
+ * @paran params
+ */
+VC_STATUS CaptureDevice::GetParameters(OutputParams* params)
+{
+    return (VC_SUCCESS);
 }
 
 /**
@@ -116,7 +201,7 @@ VC_STATUS CaptureDevice::GetCaptureDeviceList(char** list)
 void CaptureDevice::Task()
 {
     VC_MSG("Enter");
-    Buffer* buf = m_audioprocess->GetBuffer();
+    Buffer* buf = m_output->GetBuffer();
 
     while (m_state)
     {
@@ -161,9 +246,9 @@ void CaptureDevice::Task()
                     if (!process_data)
                     {
                         /* send a start tag to audioprocessor device to begin processing the data */
-                        Buffer* b = m_audioprocess->GetBuffer();
+                        Buffer* b = m_output->GetBuffer();
                         b->SetTag(TAG_START);
-                        m_audioprocess->PushBuffer(b);
+                        m_output->PushBuffer(b);
                         process_data = true;
                     }
 
@@ -176,9 +261,9 @@ void CaptureDevice::Task()
                 if (process_data && samples_2k > 2048)
                 {
                     buf->SetSamples(samples_2k);
-                    m_audioprocess->PushBuffer(buf);
+                    m_output->PushBuffer(buf);
                     samples_2k = 0;
-                    buf = m_audioprocess->GetBuffer();
+                    buf = m_output->GetBuffer();
                     ptr = (ALshort*) buf->GetData();
                 }
                 else if (!process_data)
@@ -194,9 +279,9 @@ void CaptureDevice::Task()
                  */
                 if (total_samples > 40000 && (avg_amplitude < m_threshold * 3 / 8))
                 {
-                    Buffer* b = m_audioprocess->GetBuffer();
+                    Buffer* b = m_output->GetBuffer();
                     b->SetTag(TAG_BREAK);
-                    m_audioprocess->PushBuffer(b);
+                    m_output->PushBuffer(b);
                     total_samples = 0;
                 }
 
@@ -210,9 +295,9 @@ void CaptureDevice::Task()
                     if (process_data)
                     {
                         alcCaptureStop(m_capturedev);
-                        Buffer* b = m_audioprocess->GetBuffer();
+                        Buffer* b = m_output->GetBuffer();
                         b->SetTag(TAG_END);
-                        m_audioprocess->PushBuffer(b);
+                        m_output->PushBuffer(b);
                     }
                     break;
                 }
@@ -232,9 +317,7 @@ void CaptureDevice::Task()
  */
 void CaptureDevice::StartCapture()
 {
-    Start();
-    usleep(100000);
-    m_running = true;
+
 }
 
 /**
@@ -242,9 +325,7 @@ void CaptureDevice::StartCapture()
  */
 void CaptureDevice::StopCapture()
 {
-    m_running = false;
-    Stop();
-    alcCaptureStop(m_capturedev);
+
 }
 
 /**

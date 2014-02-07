@@ -1,26 +1,14 @@
 #include "audio_processor.h"
 #define NUM_OF_BUFFERS 128
 
-AudioProcessor::AudioProcessor():
-    m_cv(m_mutex)
+AudioProcessor::AudioProcessor(const char* name):
+    m_cv(m_mutex),
+    m_name(name)
 {
-    m_flac = new FLACWrapper((char*)VC_AUDIO_FILENAME);
-    m_curl = new CURLWrapper((char*)VC_AUDIO_FILENAME);
-
-    for(int i=0;i<NUM_OF_BUFFERS;i++)
-    {
-        Buffer* buf = new Buffer();
-        m_buffers.push_back(buf);
-    }
-#if not OLD_METHOD_PROCESSING
-    Start();
-#endif
 }
 
 AudioProcessor::~AudioProcessor()
 {
-    Stop();
-
     m_mutex.Lock();
     m_cv.Notify();
     m_mutex.Unlock();
@@ -30,12 +18,88 @@ AudioProcessor::~AudioProcessor()
     delete m_flac;
     delete m_curl;
 
-    for(std::list<Buffer*>::iterator it = m_buffers.begin(); it != m_buffers.end() ; it++)
-    {
-        delete *it;
-    }
+    delete m_input;
+    delete m_output;
 
-    m_buffers.clear();
+}
+
+/**
+ * Initialize the device and get all the resources
+ */
+VC_STATUS AudioProcessor::Initialize()
+{
+    m_flac = new FLACWrapper((char*)VC_AUDIO_FILENAME);
+    m_curl = new CURLWrapper((char*)VC_AUDIO_FILENAME);
+    m_input = new InputPort("Inputport 0",this);
+    m_output = new OutputPort("Ouputport 0",this);
+
+    return (VC_SUCCESS);
+}
+
+/**
+ * Return the input port of the device
+ * @return m_input
+ */
+InputPort* AudioProcessor::Input(int portno)
+{
+    return (m_input);
+}
+
+/**
+ * Return the output port of the device
+ * @return m_output
+ */
+OutputPort* AudioProcessor::Output(int portno)
+{
+    return (m_output);
+}
+
+/**
+ * Notifies the device of any event
+ */
+VC_STATUS AudioProcessor::Notify()
+{
+    //TODO: update the api to notify different type of events
+    m_mutex.Lock();
+    m_cv.Notify();
+    m_mutex.Unlock();
+
+    return (VC_SUCCESS);
+}
+
+/**
+ * Send a command to the device
+ */
+VC_STATUS AudioProcessor::SendCommand(VC_CMD cmd)
+{
+    switch (cmd)
+    {
+    case VC_CMD_START:
+        Start();
+        break;
+    case VC_CMD_STOP:
+        Stop();
+        break;
+    }
+    return (VC_SUCCESS);
+}
+
+/**
+ * Set the required parameters for device
+ * @paran params
+ */
+VC_STATUS AudioProcessor::SetParameters(const InputParams* params)
+{
+    return (VC_SUCCESS);
+}
+
+/**
+ * Get the required parameters from device
+ * @paran params
+ */
+VC_STATUS AudioProcessor::GetParameters(OutputParams* params)
+{
+    return (VC_SUCCESS);
 }
 
 VC_STATUS AudioProcessor::InitiateDataProcessing()
@@ -132,12 +196,10 @@ void AudioProcessor::Task()
     bool senddata=false;
     while(m_state)
     {
-        if(m_processbuf.size()>0)
+        if(m_input->IsBufferAvailable())
         {
             char text[2048] = "";
-            VC_TRACE("Thread running buffer size %d", m_processbuf.size());
-            Buffer* buf =  m_processbuf.front();
-            m_processbuf.pop_front();
+            Buffer* buf = m_input->GetFilledBuffer();
 
             if(buf->GetTag() == TAG_START)
             {
@@ -164,13 +226,12 @@ void AudioProcessor::Task()
                 strcat(m_text,text);
                 VC_ALL("GotText %s\n",m_text);
 
-                //TODO:improve this notification mechanism
-
                 if (strcmp(m_text," "))
                 {
                     char notifycmd[4 * 1000] = "notify-send -t 10 \"Received Text\" \"";
                     strcat(notifycmd, m_text);
                     strcat(notifycmd, "\"");
+                    //TODO:improve this GUI notification mechanism
                     system("pkill notify-osd");
                     system(notifycmd);
                 }
@@ -181,13 +242,14 @@ void AudioProcessor::Task()
             {
                 senddata=true;
                 m_flac->WriteData(buf->GetData(), buf->GetSamples());
-                RecycleBuffer(buf);
             }
+
+            m_input->RecycleBuffer(buf);
         }
         else
         {
             //wait condition
-            while (m_processbuf.size() == 0 && m_state)
+            while (!m_input->IsBufferAvailable() && m_state)
             {
                 m_mutex.Lock();
                 m_cv.Wait();
@@ -199,32 +261,17 @@ void AudioProcessor::Task()
 
 VC_STATUS AudioProcessor::PushBuffer(Buffer* buf)
 {
-    VC_TRACE("processbuffer size %d", m_processbuf.size());
-    m_processbuf.push_back(buf);
-
-    m_mutex.Lock();
-    m_cv.Notify();
-    m_mutex.Unlock();
-
     return (VC_SUCCESS);
 }
 
 Buffer* AudioProcessor::GetBuffer()
 {
-    while (m_buffers.size() == 0)
-    {
-        VC_ERR("Low on Buffers");
-    }
-    Buffer* buf = m_buffers.front();
-    m_buffers.pop_front();
-    VC_TRACE("m_buffer address %x", (unsigned int)buf);
-    return (buf);
+    return (NULL);
 }
 
 VC_STATUS AudioProcessor::RecycleBuffer(Buffer* buf)
 {
-    buf->Reset();
-    m_buffers.push_back(buf);
+
     return (VC_SUCCESS);
 }
 

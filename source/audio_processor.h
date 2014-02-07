@@ -10,9 +10,52 @@
 #include "curl/curl.h"
 #include "buffer.h"
 #include "worker.h"
+#include "apipe.h"
 
 #define VC_SPEECH_ENGINE "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\""
 #define VC_AUDIO_FILENAME "audio.flac"
+
+class CURLWrapper;
+
+class AudioProcessor: public WorkerThread, public ADevice
+{
+public:
+    AudioProcessor(const char* name);
+    virtual ~AudioProcessor();
+
+    virtual VC_STATUS Initialize();
+    virtual VC_STATUS Notify();
+    virtual InputPort* Input(int portno);
+    virtual OutputPort* Output(int portno);
+    virtual VC_STATUS SendCommand(VC_CMD cmd);
+    virtual VC_STATUS SetParameters(const InputParams* params);
+    virtual VC_STATUS GetParameters(OutputParams* params);
+
+    VC_STATUS ProcessAudioData(Buffer* buf);
+    VC_STATUS PushBuffer(Buffer* buf);
+    VC_STATUS InitiateDataProcessing();
+    VC_STATUS CloseDataProcessing(char* text);
+    VC_STATUS GetText(char* text);
+    Buffer* GetBuffer();
+    VC_STATUS RecycleBuffer(Buffer* buf);
+    const char* c_str()
+    {
+        return (m_name);
+    }
+private:
+
+    virtual void Task();
+    FLACWrapper* m_flac;
+    CURLWrapper* m_curl;
+    Json::Reader m_reader;
+    char m_text[4*1024];
+    Mutex m_mutex;
+    ConditionVariable m_cv;
+    const char* m_name;
+    InputPort* m_input;
+    OutputPort* m_output;
+};
+
 
 class CURLWrapper
 {
@@ -31,35 +74,6 @@ private:
     struct curl_slist *m_header;
     char* m_buffer;
     struct curl_httppost* m_formpost;
-};
-
-class AudioProcessor: public WorkerThread
-{
-public:
-    AudioProcessor();
-    virtual ~AudioProcessor();
-    VC_STATUS ProcessAudioData(Buffer* buf);
-    VC_STATUS PushBuffer(Buffer* buf);
-    VC_STATUS InitiateDataProcessing();
-    VC_STATUS CloseDataProcessing(char* text);
-    VC_STATUS GetText(char* text);
-    Buffer* GetBuffer();
-    VC_STATUS RecycleBuffer(Buffer* buf);
-
-private:
-    const char* c_str()
-    {
-        return ("AudioProcessor");
-    }
-    virtual void Task();
-    FLACWrapper* m_flac;
-    CURLWrapper* m_curl;
-    Json::Reader m_reader;
-    std::list<Buffer*> m_buffers;
-    std::list<Buffer*> m_processbuf;
-    char m_text[4*1024];
-    Mutex m_mutex;
-    ConditionVariable m_cv;
 };
 
 #endif /*AUDIO_PROCESSOR_H_*/
