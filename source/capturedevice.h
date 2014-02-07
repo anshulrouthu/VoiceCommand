@@ -53,6 +53,8 @@ private:
     Timer* m_timer;
     AudioProcessor* m_audioprocess;
     int m_threshold;
+    Mutex m_mutex;
+    ConditionVariable m_cv;
 
 };
 

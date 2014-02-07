@@ -67,6 +67,11 @@ do                                      \
 
 //debugging code end
 
+typedef enum
+{
+    VC_CMD_START=0,
+    VC_CMD_STOP
+}VC_CMD;
 
 typedef enum
 {

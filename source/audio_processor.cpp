@@ -1,7 +1,8 @@
 #include "audio_processor.h"
 #define NUM_OF_BUFFERS 128
 
-AudioProcessor::AudioProcessor()
+AudioProcessor::AudioProcessor():
+    m_cv(m_mutex)
 {
     m_flac = new FLACWrapper((char*)VC_AUDIO_FILENAME);
     m_curl = new CURLWrapper((char*)VC_AUDIO_FILENAME);

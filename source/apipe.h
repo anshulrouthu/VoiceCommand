@@ -13,59 +13,9 @@
 #include "capturedevice.h"
 #include "audio_processor.h"
 
-class ADevice;
+class InputPort;
 class OutputPort;
-class Inputport;
-
-/**
- * An InputPort to a device that receives data
- */
-class InputPort
-{
-public:
-    InputPort(char* name, ADevice* device);
-    ~InputPort()
-    {
-    }
-    Buffer* GetFilledBuffer();
-    Buffer* GetEmptyBuffer();
-    bool IsBufferAvailable();
-    VC_STATUS RecycleBuffer(Buffer* buf);
-    VC_STATUS ReceiveBuffer(Buffer* buf);
-private:
-    const char* c_str()
-    {
-        return (m_name);
-    }
-    std::list<Buffer*> m_buffers;
-    std::list<Buffer*> m_processbuf;
-    char* m_name;
-    ADevice* m_device;
-
-};
-
-/**
- * OutputPort to a device that sends the data out
- */
-class OutputPort
-{
-public:
-    OutputPort(char* name, ADevice* device);
-    ~OutputPort()
-    {
-    }
-    VC_STATUS PushBuffer(Buffer* buf);
-    Buffer* GetBuffer();
-    VC_STATUS SetReceiver(InputPort* inport);
-private:
-    const char* c_str()
-    {
-        return (m_name);
-    }
-    char* m_name;
-    ADevice* m_device;
-    InputPort* m_receiver;
-};
+class ADevice;
 
 /**
  * A pipe that maintains all the devices and their connections
@@ -73,19 +23,24 @@ private:
 class APipe
 {
 public:
-    APipe(char* name);
+    APipe(const char* name);
     ~APipe(){}
+
     /**
-     * Query the pipe for devices
+     * Query the pipe for available devices
      */
-    ADevice* GetDevice(VC_DEVICETYPE dev);
+    ADevice* GetDevice(VC_DEVICETYPE dev, char* name);
 
     VC_STATUS ConnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS DisconnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS ConnectPorts(InputPort* input,OutputPort* output);
     VC_STATUS DisconnectPorts(InputPort* input,OutputPort* output);
+    const char* c_str()
+    {
+        return (m_name);
+    }
 private:
-    char* m_name;
+    const char* m_name;
 };
 
 /**
@@ -94,9 +49,10 @@ private:
 class ADevice
 {
 public:
-    ADevice(char* name);
-    virtual ~ADevice();
+    ADevice(const char* name) {};
+    virtual ~ADevice() {}
     virtual VC_STATUS Initialize()=0;
+
     /**
      * Function to notify the device for any events
      */
@@ -112,6 +68,62 @@ public:
      */
     virtual OutputPort* Output(int portno)=0;
 
+    /**
+     * Send a command to device. This method triggers the device to start or stop
+     */
+    virtual VC_STATUS SendCommand(VC_CMD cmd)=0;
+
+};
+
+/**
+ * An InputPort to a device that receives data.
+ * Also takes care of the buffer management
+ */
+class InputPort
+{
+public:
+    InputPort(const char* name, ADevice* device);
+    ~InputPort()
+    {
+    }
+    Buffer* GetFilledBuffer();
+    Buffer* GetEmptyBuffer();
+    bool IsBufferAvailable();
+    VC_STATUS RecycleBuffer(Buffer* buf);
+    VC_STATUS ReceiveBuffer(Buffer* buf);
+    const char* c_str()
+    {
+        return (m_name);
+    }
+private:
+    std::list<Buffer*> m_buffers;
+    std::list<Buffer*> m_processbuf;
+    const char* m_name;
+    ADevice* m_device;
+
+};
+
+/**
+ * OutputPort to a device that sends the data out
+ */
+class OutputPort
+{
+public:
+    OutputPort(const char* name, ADevice* device);
+    ~OutputPort()
+    {
+    }
+    VC_STATUS PushBuffer(Buffer* buf);
+    Buffer* GetBuffer();
+    VC_STATUS SetReceiver(InputPort* inport);
+    const char* c_str()
+    {
+        return (m_name);
+    }
+private:
+    const char* m_name;
+    ADevice* m_device;
+    InputPort* m_receiver;
 };
 
 #endif /* APIPE_H_ */

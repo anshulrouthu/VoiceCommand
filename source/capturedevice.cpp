@@ -16,7 +16,8 @@
  */
 CaptureDevice::CaptureDevice(int thr) :
     m_running(false),
-    m_threshold(thr)
+    m_threshold(thr),
+    m_cv(m_mutex)
 {
     m_audioprocess = new AudioProcessor();
     m_timer = new Timer();

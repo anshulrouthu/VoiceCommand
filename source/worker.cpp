@@ -19,8 +19,7 @@
  * Workerthread Constructor
  */
 WorkerThread::WorkerThread() :
-    m_state(false),
-    m_cv(m_mutex)
+    m_state(false)
 {
 }
 
@@ -151,7 +150,6 @@ int ConditionVariable::Wait(int milliseconds)
         }
 
         return (pthread_cond_timedwait(&m_condition, &m_mutex.m_mutex, &abstime));
-
     }
 }
 

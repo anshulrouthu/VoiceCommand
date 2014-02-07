@@ -12,11 +12,85 @@
 #define NUM_OF_BUFFERS 128
 
 /**
+ * APipe constructor
+ * @param name to identify the pipe
+ */
+APipe::APipe(const char* name):
+    m_name(name)
+{
+}
+
+/**
+ * Returns the queried device based on the VC_DEVICETYPE
+ * @param[in] devtype type of device requested
+ * @param[in] name of the device to be names for identification
+ * @return device instance of the device available based on type
+ */
+ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, char* name)
+{
+    switch(devtype)
+    {
+    case VC_CAPTURE_DEVICE:
+        break;
+    case VC_AUDIO_PROCESSOR:
+        break;
+    case VC_TEXT_PROCESSOR:
+        break;
+    case VC_COMMAND_PROCESSOR:
+        break;
+    default:
+        break;
+    }
+
+    return (NULL);
+}
+
+/**
+ * Connects the devices to their default ports i.e port 0
+ * @param src source device
+ * @param dst destination device
+ */
+VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst)
+{
+    return (ConnectPorts(dst->Input(0),src->Output(0)));
+}
+
+/**
+ * Disconnects the devices from their default ports i.e port 0
+ * @param src source device
+ * @param dst destination device
+ */
+VC_STATUS APipe::DisconnectDevices(ADevice* src, ADevice* dst)
+{
+    return (DisconnectPorts(dst->Input(0),src->Output(0)));
+}
+
+/**
+ * Connect the specific ports irrespective of devices
+ * @param input port
+ * @param output port
+ */
+VC_STATUS APipe::ConnectPorts(InputPort* input, OutputPort* output)
+{
+    return (output->SetReceiver(input));
+}
+
+/**
+ * Disconnect the specific ports irrespective of devices
+ * @param input port
+ * @param output port
+ */
+VC_STATUS APipe::DisconnectPorts(InputPort* input, OutputPort* output)
+{
+    return (output->SetReceiver(NULL));
+}
+
+/**
  * Inputport constructor
  * @param name to identify this input port
  * @param device this input port belongs to
  */
-InputPort::InputPort(char* name, ADevice* device) :
+InputPort::InputPort(const char* name, ADevice* device) :
     m_name(name),
     m_device(device)
 {
@@ -78,7 +152,10 @@ VC_STATUS InputPort::ReceiveBuffer(Buffer* buf)
     VC_TRACE("Enter");
     m_processbuf.push_back(buf);
 
-    m_device->Notify();
+    if(m_device)
+    {
+        m_device->Notify();
+    }
 
     return (VC_SUCCESS);
 }
@@ -97,7 +174,7 @@ bool InputPort::IsBufferAvailable()
  * @param name to identify this output port
  * @param device this output port belongs to
  */
-OutputPort::OutputPort(char* name, ADevice* device) :
+OutputPort::OutputPort(const char* name, ADevice* device) :
     m_name(name),
     m_device(device),
     m_receiver(NULL)
@@ -140,77 +217,4 @@ Buffer* OutputPort::GetBuffer()
 
     VC_ERR("Not connected to any InputPort");
     return (NULL);
-}
-
-/**
- * APipe constructor
- * @param name to identify the pipe
- */
-APipe::APipe(char* name):
-    m_name(name)
-{
-}
-
-/**
- * Returns the queried device based on the VC_DEVICETYPE
- * @param[in] devtype type of device requested
- * @return device instance of the device available based on type
- */
-ADevice* APipe::GetDevice(VC_DEVICETYPE devtype)
-{
-    switch(devtype)
-    {
-    case VC_CAPTURE_DEVICE:
-        break;
-    case VC_AUDIO_PROCESSOR:
-        break;
-    case VC_TEXT_PROCESSOR:
-        break;
-    case VC_COMMAND_PROCESSOR:
-        break;
-    default:
-        break;
-    }
-
-    return (NULL);
-}
-
-/**
- * Connects the devices to their default ports i.e port 0
- * @param src source device
- * @param dst destination device
- */
-VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst)
-{
-    return (ConnectPorts(dst->Input(0),src->Output(0)));
-}
-
-/**
- * Disconnects the devices from their default ports i.e port 0
- * @param src source device
- * @param dst destination device
- */
-VC_STATUS APipe::DisconnectDevices(ADevice* src, ADevice* dst)
-{
-    return (DisconnectPorts(dst->Input(0),src->Output(0)));
-}
-
-/**
- * Connect the specific ports irrespective of devices
- * @param input port
- * @param output port
- */
-VC_STATUS APipe::ConnectPorts(InputPort* input, OutputPort* output)
-{
-    return (output->SetReceiver(input));
-}
-
-/**
- * Disconnect the specific ports irrespective of devices
- * @param input port
- * @param output port
- */
-VC_STATUS APipe::DisconnectPorts(InputPort* input, OutputPort* output)
-{
-    return (output->SetReceiver(NULL));
 }

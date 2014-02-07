@@ -66,7 +66,7 @@ public:
     int Join();
     void Stop();
 private:
-    virtual const char* c_str()
+    const char* c_str()
     {
         return ("WorkerThread");
     }
@@ -76,8 +76,7 @@ private:
 
 protected:
     bool m_state;
-    Mutex m_mutex;
-    ConditionVariable m_cv;
+
 };
 
 #endif /* WORKER_THREAD_H_ */

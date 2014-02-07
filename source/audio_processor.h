@@ -47,7 +47,7 @@ public:
     VC_STATUS RecycleBuffer(Buffer* buf);
 
 private:
-    virtual const char* c_str()
+    const char* c_str()
     {
         return ("AudioProcessor");
     }
@@ -58,6 +58,8 @@ private:
     std::list<Buffer*> m_buffers;
     std::list<Buffer*> m_processbuf;
     char m_text[4*1024];
+    Mutex m_mutex;
+    ConditionVariable m_cv;
 };
 
 #endif /*AUDIO_PROCESSOR_H_*/

@@ -27,9 +27,9 @@ void* Buffer::GetData()
     return (m_data);
 }
 
-VC_STATUS Buffer::WriteData(void* buf)
+VC_STATUS Buffer::WriteData(void* buf, size_t size)
 {
-    m_data = buf;
+    VC_CHECK(!memcpy(m_data, buf, size),return VC_FAILURE,"Error writing data to buffer");
     return (VC_SUCCESS);
 }
 
