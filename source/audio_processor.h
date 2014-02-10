@@ -20,11 +20,11 @@ class CURLWrapper;
 class AudioProcessor: public WorkerThread, public ADevice
 {
 public:
-    AudioProcessor(const char* name);
+    AudioProcessor(std::string name);
     virtual ~AudioProcessor();
 
     virtual VC_STATUS Initialize();
-    virtual VC_STATUS Notify();
+    virtual VC_STATUS Notify(VC_EVENT* evt);
     virtual InputPort* Input(int portno);
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
@@ -40,7 +40,7 @@ public:
     VC_STATUS RecycleBuffer(Buffer* buf);
     const char* c_str()
     {
-        return (m_name);
+        return (m_name.c_str());
     }
 private:
 
@@ -51,7 +51,7 @@ private:
     char m_text[4*1024];
     Mutex m_mutex;
     ConditionVariable m_cv;
-    const char* m_name;
+    std::string m_name;
     InputPort* m_input;
     OutputPort* m_output;
 };

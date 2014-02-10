@@ -16,10 +16,10 @@ int main(int argc, char* argv[])
 {
     int c;
     int threshold = 1500;
-    bool autosetup = false;
+    bool autosetup = false, filecapture=false;
     ADevice* src;
     ADevice* sink;
-    while ((c = getopt(argc, argv, "s?l:d:t:")) != -1)
+    while ((c = getopt(argc, argv, "sf?l:d:t:")) != -1)
     {
         switch (c)
         {
@@ -37,6 +37,9 @@ int main(int argc, char* argv[])
             threshold = (int) strtol(optarg, NULL, 10);
             DBG_PRINT(DBG_TRACE, "Audio Volume threshold: %d", threshold);
             break;
+        case 'f':
+            filecapture = true;
+            break;
         default:
             break;
         }
@@ -44,7 +47,14 @@ int main(int argc, char* argv[])
 
     APipe* pipe = new APipe("Pipe 0");
     src = pipe->GetDevice(VC_CAPTURE_DEVICE,"CaptureDevice 0");
-    sink = pipe->GetDevice(VC_AUDIO_PROCESSOR,"AudioProcessor 0");
+    if(filecapture)
+    {
+        sink = pipe->GetDevice(VC_FILECAPTURE_DEVICE,"FileCapture");
+    }
+    else
+    {
+        sink = pipe->GetDevice(VC_AUDIO_PROCESSOR,"AudioProcessor 0");
+    }
 
     src->Initialize();
     sink->Initialize();

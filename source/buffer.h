@@ -19,6 +19,7 @@ public:
     size_t GetSize();
     int GetSamples();
     VC_STATUS SetSamples(int samples);
+    VC_STATUS SetSize(size_t size);
     VC_STATUS Reset();
     VC_STATUS WriteData(void* buf, size_t size);
     BUF_TAG GetTag();

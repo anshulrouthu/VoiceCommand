@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <termios.h>
 #include <unistd.h>
 #include <sstream>
@@ -19,6 +20,8 @@
 #include <getopt.h>
 #include <string.h>
 #include <list>
+
+#define NO_OF_CHANNELS 1
 
 void DebugSetLevel(int level);
 int kbhit(void);
@@ -69,6 +72,11 @@ do                                      \
 
 typedef enum
 {
+
+}VC_EVENT;
+
+typedef enum
+{
     VC_CMD_START=0,
     VC_CMD_STOP
 }VC_CMD;
@@ -78,7 +86,8 @@ typedef enum
     VC_CAPTURE_DEVICE=0,
     VC_AUDIO_PROCESSOR,
     VC_TEXT_PROCESSOR,
-    VC_COMMAND_PROCESSOR
+    VC_COMMAND_PROCESSOR,
+    VC_FILECAPTURE_DEVICE
 
 }VC_DEVICETYPE;
 

@@ -14,7 +14,7 @@
  * Capturedevice constructor. Initializes the threashold level of input audio level
  * @param thr threshold input level
  */
-CaptureDevice::CaptureDevice(const char* name) :
+CaptureDevice::CaptureDevice(std::string name) :
     m_running(false),
     m_threshold(2000),
     m_cv(m_mutex),
@@ -31,7 +31,6 @@ CaptureDevice::~CaptureDevice()
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
 
-
     delete m_timer;
     delete m_input;
     delete m_output;
@@ -44,8 +43,8 @@ CaptureDevice::~CaptureDevice()
 VC_STATUS CaptureDevice::Initialize()
 {
     m_timer = new Timer();
-    m_input = new InputPort("Inputport 0",this);
-    m_output = new OutputPort("Ouputport 0",this);
+    m_input = new InputPort("Inputport 0", this);
+    m_output = new OutputPort("Ouputport 0", this);
 
     OpenCaptureDevice();
 
@@ -73,7 +72,7 @@ OutputPort* CaptureDevice::Output(int portno)
 /**
  * Notifies the device of any event
  */
-VC_STATUS CaptureDevice::Notify()
+VC_STATUS CaptureDevice::Notify(VC_EVENT* evt)
 {
     //TODO: update the api to notify different type of events
     m_mutex.Lock();
@@ -110,6 +109,7 @@ VC_STATUS CaptureDevice::SendCommand(VC_CMD cmd)
  */
 VC_STATUS CaptureDevice::SetParameters(const InputParams* params)
 {
+    VC_TRACE("Enter");
     m_threshold = params->threshold;
     return (VC_SUCCESS);
 }
@@ -164,7 +164,7 @@ VC_STATUS CaptureDevice::OpenCaptureDevice()
 {
     VC_MSG("Enter");
 
-    m_capturedev = alcCaptureOpenDevice(NULL, SAMPLE_RATE, AL_FORMAT_STEREO16, 800);
+    m_capturedev = alcCaptureOpenDevice(NULL, SAMPLE_RATE, AL_FORMAT_MONO16, 800);
 
     VC_CHECK(m_capturedev == NULL, return (VC_FAILURE), "Unable to open capture device!");
     VC_TRACE("opened device %s", GetCaptureDevice());
@@ -230,7 +230,7 @@ void CaptureDevice::Task()
                 int sum = 0, avg_amplitude = 0;
 
                 /* calculate the average amplitude of samples from current iteration*/
-                for (ALint i = 0; i <= samplesAvailable * 2; i++)
+                for (ALint i = 0; i <= samplesAvailable * NO_OF_CHANNELS; i++)
                 {
                     sum += abs((int) *tmp++);
                 }
@@ -255,12 +255,13 @@ void CaptureDevice::Task()
                     VC_TRACE("amplitude:%d %ld", avg_amplitude, m_timer->GetTimePassed());
                 }
 
-                ptr += samplesAvailable * 2;
+                ptr += samplesAvailable * NO_OF_CHANNELS;
 
                 /* when we have enough data captured send the buffer to audio processor */
                 if (process_data && samples_2k > 2048)
                 {
                     buf->SetSamples(samples_2k);
+                    buf->SetSize(samples_2k * 2 * NO_OF_CHANNELS);
                     m_output->PushBuffer(buf);
                     samples_2k = 0;
                     buf = m_output->GetBuffer();
@@ -275,7 +276,7 @@ void CaptureDevice::Task()
 
                 /**
                  * If enough samples are captured send the break tag to process the data
-                 * till now and get a new set of fresh data
+                 * till now and get a new set of fresh data TODO: find the avg value to be check for
                  */
                 if (total_samples > 40000 && (avg_amplitude < m_threshold * 3 / 8))
                 {

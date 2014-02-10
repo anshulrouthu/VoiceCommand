@@ -92,7 +92,7 @@ int FLACWrapper::WriteData(void* data, int samples)
             FLAC__stream_encoder_process_interleaved(m_encoder, pcm, need);
         }
         left -= need;
-        buffer += need * 4;
+        buffer += need * 2 * NO_OF_CHANNELS;
     }
 
     return (m_cdata.samples);

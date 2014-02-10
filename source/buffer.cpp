@@ -30,6 +30,7 @@ void* Buffer::GetData()
 VC_STATUS Buffer::WriteData(void* buf, size_t size)
 {
     VC_CHECK(!memcpy(m_data, buf, size),return VC_FAILURE,"Error writing data to buffer");
+    m_size = size;
     return (VC_SUCCESS);
 }
 
@@ -48,6 +49,13 @@ VC_STATUS Buffer::SetSamples(int samples)
     m_samples = samples;
     return (VC_SUCCESS);
 }
+
+VC_STATUS Buffer::SetSize(size_t size)
+{
+    m_size = size;
+    return (VC_SUCCESS);
+}
+
 
 VC_STATUS Buffer::Reset()
 {

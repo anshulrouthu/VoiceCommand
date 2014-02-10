@@ -37,23 +37,23 @@ typedef struct
 class APipe
 {
 public:
-    APipe(const char* name);
+    APipe(std::string name);
     ~APipe(){}
 
     /**
      * Query the pipe for available devices
      */
-    ADevice* GetDevice(VC_DEVICETYPE dev, const char* name);
+    ADevice* GetDevice(VC_DEVICETYPE dev, std::string name);
     VC_STATUS ConnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS DisconnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS ConnectPorts(InputPort* input,OutputPort* output);
     VC_STATUS DisconnectPorts(InputPort* input,OutputPort* output);
     const char* c_str()
     {
-        return (m_name);
+        return (m_name.c_str());
     }
 private:
-    const char* m_name;
+    std::string m_name;
 };
 
 /**
@@ -69,7 +69,7 @@ public:
     /**
      * Function to notify the device for any events
      */
-    virtual VC_STATUS Notify()=0;
+    virtual VC_STATUS Notify(VC_EVENT* evt)=0;
 
     /**
      * Get the inputport of the device

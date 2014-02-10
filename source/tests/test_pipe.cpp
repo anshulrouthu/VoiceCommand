@@ -8,12 +8,12 @@
 #include "utils.h"
 #include <UnitTest++.h>
 #include "apipe.h"
+#include "file_capture.h"
 
 class TestDevice: public ADevice
 {
 public:
-    TestDevice(const char* name) :
-        ADevice(name),
+    TestDevice(std::string name) :
         m_name(name),
         m_inport("Inputport 0",this),
         m_outport("Outport 0",this)
@@ -29,7 +29,7 @@ public:
         return (VC_SUCCESS);
     }
 
-    virtual VC_STATUS Notify()
+    virtual VC_STATUS Notify(VC_EVENT* evt)
     {
         return (VC_SUCCESS);
     }
@@ -49,13 +49,24 @@ public:
         return (VC_SUCCESS);
     }
 
+    virtual VC_STATUS SetParameters(const InputParams* params)
+    {
+        return (VC_SUCCESS);
+    }
+
+    virtual VC_STATUS GetParameters(OutputParams* params)
+    {
+        return (VC_SUCCESS);
+    }
+
+
     const char* c_str()
     {
-        return (m_name);
+        return (m_name.c_str());
     }
 
 private:
-    const char* m_name;
+    std::string m_name;
     InputPort m_inport;
     OutputPort m_outport;
 
@@ -69,7 +80,7 @@ SUITE(APipeFrameworkTest)
         TestDevice* src = new TestDevice("TestDevice Src");
         CHECK_EQUAL(src->c_str(),"TestDevice Src");
         CHECK_EQUAL(src->Initialize(),VC_SUCCESS);
-        CHECK_EQUAL(src->Notify(),VC_SUCCESS);
+        CHECK_EQUAL(src->Notify(NULL),VC_SUCCESS);
         CHECK(!!src->Input(0));
         CHECK(!!src->Output(0));
         CHECK_EQUAL(src->SendCommand(VC_CMD_START),VC_SUCCESS);
@@ -120,6 +131,42 @@ SUITE(APipeFrameworkTest)
         delete pipe;
         delete input;
         delete output;
+    }
+
+    TEST(FileCaptureTEST)
+    {
+        DBGPRINT(DBG_ALWAYS,("Testing FileCaptureTEST\n"));
+        FILE* fp;
+        APipe* pipe = new APipe("Pipe 0");
+        Buffer* b = new Buffer();
+        FileCapture* dst = new FileCapture("FileCapture");
+        OutputPort* output = new OutputPort("Output 0", NULL);
+
+        dst->Initialize();
+
+        CHECK_EQUAL(pipe->c_str(),"Pipe 0");
+        CHECK_EQUAL(dst->c_str(),"FileCapture");
+        CHECK_EQUAL(output->c_str(),"Output 0");
+
+        CHECK_EQUAL(pipe->ConnectPorts(dst->Input(0),output),VC_SUCCESS);
+
+        Buffer* buf = output->GetBuffer();
+        CHECK(!!buf);
+        CHECK_EQUAL(buf->WriteData((void*)"VoiceCommand",12),VC_SUCCESS);
+        CHECK_EQUAL(output->PushBuffer(buf),VC_SUCCESS);
+        CHECK_EQUAL(pipe->DisconnectPorts(dst->Input(0),output),VC_SUCCESS);
+        delete dst;
+
+        fp = fopen("FileCapture.pcm","rb");
+        fread(b->GetData(),sizeof(char),12,fp);
+
+        CHECK_EQUAL((char*)b->GetData(),"VoiceCommand");
+
+        fclose(fp);
+        delete b;
+        delete pipe;
+        delete output;
+
     }
 
 }

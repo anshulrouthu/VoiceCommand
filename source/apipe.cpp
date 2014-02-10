@@ -8,6 +8,7 @@
 #include "apipe.h"
 #include "capturedevice.h"
 #include "audio_processor.h"
+#include "file_capture.h"
 
 /**
  * Number of input buffers
@@ -18,7 +19,7 @@
  * APipe constructor
  * @param name to identify the pipe
  */
-APipe::APipe(const char* name) :
+APipe::APipe(std::string name) :
     m_name(name)
 {
 }
@@ -29,7 +30,7 @@ APipe::APipe(const char* name) :
  * @param[in] name of the device to be names for identification
  * @return device instance of the device available based on type
  */
-ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, const char* name)
+ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name)
 {
     VC_TRACE("Enter");
     switch (devtype)
@@ -43,6 +44,9 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, const char* name)
     case VC_TEXT_PROCESSOR:
         break;
     case VC_COMMAND_PROCESSOR:
+        break;
+    case VC_FILECAPTURE_DEVICE:
+        return (new FileCapture(name));
         break;
     default:
         break;
@@ -171,7 +175,7 @@ VC_STATUS InputPort::ReceiveBuffer(Buffer* buf)
 
     if (m_device)
     {
-        m_device->Notify();
+        m_device->Notify(NULL);
     }
 
     return (VC_SUCCESS);

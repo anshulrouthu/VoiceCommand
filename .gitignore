@@ -1,8 +1,13 @@
 *.o
 *~
 bin/
+extras/
+patches/
+target/
 .cproject
 .project
 *.flac
 *.wav
 *.dat
+*.pcm
+*.spx

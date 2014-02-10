@@ -1,7 +1,7 @@
 #include "audio_processor.h"
 #define NUM_OF_BUFFERS 128
 
-AudioProcessor::AudioProcessor(const char* name):
+AudioProcessor::AudioProcessor(std::string name):
     m_cv(m_mutex),
     m_name(name)
 {
@@ -57,7 +57,7 @@ OutputPort* AudioProcessor::Output(int portno)
 /**
  * Notifies the device of any event
  */
-VC_STATUS AudioProcessor::Notify()
+VC_STATUS AudioProcessor::Notify(VC_EVENT* evt)
 {
     //TODO: update the api to notify different type of events
     m_mutex.Lock();

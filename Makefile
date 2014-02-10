@@ -30,9 +30,9 @@ $(TARGET):source/console_command.o $(OBJS)
 	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: sample
-sample: sample-record \
-        voiceCommand-old \
-        curlpost
+sample: sample-record     \
+        voiceCommand-old  \
+        curlpost          
 
 sample-record:samples/sample-record.o $(OBJS)
 	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
@@ -42,7 +42,7 @@ voiceCommand-old: source/voiceCommand-old.o $(OBJS)
 
 curlpost: samples/curlpost.o $(OBJS)
 		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
-				   	
+						   	
 %.o: %.cpp
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 			
@@ -56,4 +56,4 @@ test_pipe: source/tests/test_pipe.o $(OBJS)
 .PHONY: clean
 clean:
 	 @echo "Cleaning files..."
-	 @rm -f source/*.o samples/*.o
+	 @rm -f source/*.o samples/*.o source/tests*.o

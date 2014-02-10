@@ -21,7 +21,6 @@
 #include "timer.h"
 
 #define SAMPLE_RATE 16000
-#define NO_OF_CHANNELS 2
 
 /**
  * Capture Device Class that captures audio data continuously.
@@ -31,11 +30,11 @@
 class CaptureDevice: public WorkerThread, public ADevice
 {
 public:
-    CaptureDevice(const char* name);
+    CaptureDevice(std::string name);
     virtual ~CaptureDevice();
 
     virtual VC_STATUS Initialize();
-    virtual VC_STATUS Notify();
+    virtual VC_STATUS Notify(VC_EVENT* evt);
     virtual InputPort* Input(int portno);
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
@@ -47,11 +46,12 @@ public:
     VC_STATUS GetCaptureDeviceList(char** list);
     VC_STATUS ThresholdSetup();
 
-private:
     virtual const char* c_str()
     {
-        return (m_name);
+        return (m_name.c_str());
     }
+
+private:
     virtual void Task();
     VC_STATUS OpenPlaybackDevice();
     VC_STATUS OpenCaptureDevice();
@@ -64,7 +64,7 @@ private:
     int m_threshold;
     Mutex m_mutex;
     ConditionVariable m_cv;
-    const char* m_name;
+    std::string m_name;
     InputPort* m_input;
     OutputPort* m_output;
 
