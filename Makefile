@@ -16,7 +16,7 @@ MAINFILES:=source/console_command.cpp    \
            samples/sample-record.cpp     \
            source/voiceCommand-old.cpp   \
            samples/curlpost.cpp          \
-           source/tests/test_pipe.cpp
+           source/tests/unittests.cpp
 OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
 .PHONY: all
@@ -48,12 +48,12 @@ curlpost: samples/curlpost.o $(OBJS)
 			
 ############ ----- building unit tests ----- ##############
 
-tests: test_pipe
+tests: unittests
 	   	
-test_pipe: source/tests/test_pipe.o $(OBJS)	
+unittests: source/tests/unittests.o $(OBJS)
 	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: clean
 clean:
 	 @echo "Cleaning files..."
-	 @rm -f source/*.o samples/*.o source/tests*.o
+	 @rm -f source/*.o samples/*.o source/tests/*.o

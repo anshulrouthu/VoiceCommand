@@ -269,6 +269,7 @@ void CaptureDevice::Task()
                 }
                 else if (!process_data)
                 {
+                    total_samples = 0;
                     m_mutex.Lock();
                     m_cv.Wait(50);
                     m_mutex.Unlock();
@@ -278,7 +279,7 @@ void CaptureDevice::Task()
                  * If enough samples are captured send the break tag to process the data
                  * till now and get a new set of fresh data TODO: find the avg value to be check for
                  */
-                if (total_samples > 40000 && (avg_amplitude < m_threshold * 3 / 8))
+                if (total_samples > 15000 && (avg_amplitude < m_threshold * 3 / 8))
                 {
                     Buffer* b = m_output->GetBuffer();
                     b->SetTag(TAG_BREAK);

@@ -144,52 +144,6 @@ VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
     return (VC_SUCCESS);
 }
 
-VC_STATUS AudioProcessor::ProcessAudioData(Buffer* buf)
-{
-    VC_MSG("Enter");
-
-    //just call flac write data to file
-    m_flac->WriteData(buf->GetData(), buf->GetSamples());
-    RecycleBuffer(buf);
-
-    return (VC_FAILURE);
-}
-
-VC_STATUS AudioProcessor::GetText(char* text)
-{
-    Json::Value root;
-    Json::Value hypotheses;
-    const char* utterance;
-    double confidence;
-    char *cmd;
-
-    m_flac->CloseFLACCapture();
-    text[0] = '\0';
-    cmd = m_curl->GetText();
-    if (cmd)
-    {
-        VC_CHECK(!m_reader.parse(cmd, root, true), return (VC_FAILURE), "Error parsing text");
-
-        hypotheses = root["hypotheses"][(unsigned int) (0)];
-
-        if (hypotheses["confidence"].isDouble())
-        {
-            confidence = hypotheses["confidence"].asDouble();
-            VC_MSG("Confidence %f", confidence);
-        }
-
-        if (confidence > 0.4 && hypotheses["utterance"].isString())
-        {
-            utterance = hypotheses["utterance"].asCString();
-            strcpy(text, utterance);
-            cmd[0] = '\0';
-            VC_TRACE("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
-            return (VC_SUCCESS);
-        }
-    }
-    return (VC_SUCCESS);
-}
-
 void AudioProcessor::Task()
 {
     VC_ALL("Enter");
@@ -257,22 +211,6 @@ void AudioProcessor::Task()
             }
         }
     }
-}
-
-VC_STATUS AudioProcessor::PushBuffer(Buffer* buf)
-{
-    return (VC_SUCCESS);
-}
-
-Buffer* AudioProcessor::GetBuffer()
-{
-    return (NULL);
-}
-
-VC_STATUS AudioProcessor::RecycleBuffer(Buffer* buf)
-{
-
-    return (VC_SUCCESS);
 }
 
 CURLWrapper::CURLWrapper(char* filename):m_header(NULL),m_formpost(NULL)

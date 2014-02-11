@@ -13,7 +13,7 @@
 class Buffer
 {
 public:
-    Buffer();
+    Buffer(size_t size = 100 * 1024);
     ~Buffer();
     void* GetData();
     size_t GetSize();

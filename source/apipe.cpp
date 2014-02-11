@@ -108,7 +108,7 @@ VC_STATUS APipe::DisconnectPorts(InputPort* input, OutputPort* output)
  * @param name to identify this input port
  * @param device this input port belongs to
  */
-InputPort::InputPort(const char* name, ADevice* device) :
+InputPort::InputPort(std::string name, ADevice* device) :
     m_name(name),
     m_device(device)
 {
@@ -196,7 +196,7 @@ bool InputPort::IsBufferAvailable()
  * @param name to identify this output port
  * @param device this output port belongs to
  */
-OutputPort::OutputPort(const char* name, ADevice* device) :
+OutputPort::OutputPort(std::string name, ADevice* device) :
     m_name(name),
     m_device(device),
     m_receiver(NULL)
@@ -240,6 +240,5 @@ Buffer* OutputPort::GetBuffer()
         return (m_receiver->GetEmptyBuffer());
     }
 
-    VC_ERR("Not connected to any InputPort");
     return (NULL);
 }

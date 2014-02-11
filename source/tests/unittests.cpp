@@ -118,6 +118,7 @@ SUITE(APipeFrameworkTest)
         CHECK_EQUAL(input->c_str(),"Input 0");
         CHECK_EQUAL(output->c_str(),"Output 0");
 
+        CHECK_EQUAL(!!output->GetBuffer(),NULL);
         CHECK_EQUAL(pipe->ConnectPorts(input,output),VC_SUCCESS);
         Buffer* buf = output->GetBuffer();
         CHECK(!!buf);
@@ -125,7 +126,8 @@ SUITE(APipeFrameworkTest)
         CHECK_EQUAL(output->PushBuffer(buf),VC_SUCCESS);
         Buffer* buf2 = input->GetFilledBuffer();
         CHECK(!!buf2);
-        CHECK_EQUAL((char*)buf->GetData(),"VoiceCommand");
+        CHECK_EQUAL((char*)buf2->GetData(),"VoiceCommand");
+        CHECK_EQUAL(input->RecycleBuffer(buf2),VC_SUCCESS);
         CHECK_EQUAL(pipe->DisconnectPorts(input,output),VC_SUCCESS);
 
         delete pipe;
@@ -136,9 +138,7 @@ SUITE(APipeFrameworkTest)
     TEST(FileCaptureTEST)
     {
         DBGPRINT(DBG_ALWAYS,("Testing FileCaptureTEST\n"));
-        FILE* fp;
         APipe* pipe = new APipe("Pipe 0");
-        Buffer* b = new Buffer();
         FileCapture* dst = new FileCapture("FileCapture");
         OutputPort* output = new OutputPort("Output 0", NULL);
 
@@ -157,13 +157,13 @@ SUITE(APipeFrameworkTest)
         CHECK_EQUAL(pipe->DisconnectPorts(dst->Input(0),output),VC_SUCCESS);
         delete dst;
 
-        fp = fopen("FileCapture.pcm","rb");
-        fread(b->GetData(),sizeof(char),12,fp);
-
-        CHECK_EQUAL((char*)b->GetData(),"VoiceCommand");
+        FILE* fp;
+        char c[12];
+        fp = fopen("FileCapture.out","rb");
+        fread(c,sizeof(char),12,fp);
+        CHECK_EQUAL(c,"VoiceCommand");
 
         fclose(fp);
-        delete b;
         delete pipe;
         delete output;
 

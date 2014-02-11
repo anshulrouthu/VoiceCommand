@@ -15,7 +15,6 @@ FileCapture::~FileCapture()
 {
     fclose(m_file);
     delete m_input;
-    delete m_output;
 }
 
 /**
@@ -25,8 +24,7 @@ VC_STATUS FileCapture::Initialize()
 {
     VC_TRACE("Enter");
     m_input = new InputPort("File Input 0", this);
-    m_output = new OutputPort("File Output 0", this);
-    m_file = fopen((m_name + ".pcm").c_str(), "wb");
+    m_file = fopen((m_name + ".out").c_str(), "wb");
     return (VC_SUCCESS);
 }
 

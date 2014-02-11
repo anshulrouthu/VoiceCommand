@@ -7,19 +7,21 @@
 
 #include "buffer.h"
 
-Buffer::Buffer() :
-    m_data(NULL),
+Buffer::Buffer(size_t size) :
     m_size(0),
     m_tag(TAG_NONE)
 {
-    m_data = malloc(100 * 1024);
+    m_data = malloc(size);
     VC_CHECK(m_data == NULL,, "Error allocating buffer");
 }
 
 Buffer::~Buffer()
 {
     if (m_data)
+    {
         free(m_data);
+        m_data = NULL;
+    }
 }
 
 void* Buffer::GetData()

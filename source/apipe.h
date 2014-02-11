@@ -105,7 +105,7 @@ public:
 class InputPort
 {
 public:
-    InputPort(const char* name, ADevice* device);
+    InputPort(std::string name, ADevice* device);
     ~InputPort()
     {
     }
@@ -116,12 +116,12 @@ public:
     VC_STATUS ReceiveBuffer(Buffer* buf);
     const char* c_str()
     {
-        return (m_name);
+        return (m_name.c_str());
     }
 private:
     std::list<Buffer*> m_buffers;
     std::list<Buffer*> m_processbuf;
-    const char* m_name;
+    std::string m_name;
     ADevice* m_device;
 
 };
@@ -132,7 +132,7 @@ private:
 class OutputPort
 {
 public:
-    OutputPort(const char* name, ADevice* device);
+    OutputPort(std::string name, ADevice* device);
     ~OutputPort()
     {
     }
@@ -141,10 +141,10 @@ public:
     VC_STATUS SetReceiver(InputPort* inport);
     const char* c_str()
     {
-        return (m_name);
+        return (m_name.c_str());
     }
 private:
-    const char* m_name;
+    std::string m_name;
     ADevice* m_device;
     InputPort* m_receiver;
 };

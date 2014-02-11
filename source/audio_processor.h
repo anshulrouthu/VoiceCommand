@@ -31,13 +31,9 @@ public:
     virtual VC_STATUS SetParameters(const InputParams* params);
     virtual VC_STATUS GetParameters(OutputParams* params);
 
-    VC_STATUS ProcessAudioData(Buffer* buf);
-    VC_STATUS PushBuffer(Buffer* buf);
     VC_STATUS InitiateDataProcessing();
     VC_STATUS CloseDataProcessing(char* text);
-    VC_STATUS GetText(char* text);
-    Buffer* GetBuffer();
-    VC_STATUS RecycleBuffer(Buffer* buf);
+
     const char* c_str()
     {
         return (m_name.c_str());
