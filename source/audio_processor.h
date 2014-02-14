@@ -1,4 +1,14 @@
+/***********************************************************
+voiceCommand 
 
+  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+
+  All rights reserved.
+
+  This software is distributed on an "AS IS" BASIS, 
+  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
+  express or implied.
+***********************************************************/
 
 #ifndef AUDIO_PROCESSOR_H_
 #define AUDIO_PROCESSOR_H_

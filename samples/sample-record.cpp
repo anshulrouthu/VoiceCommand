@@ -1,3 +1,15 @@
+/***********************************************************
+voiceCommand 
+
+  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+
+  All rights reserved.
+
+  This software is distributed on an "AS IS" BASIS, 
+  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
+  express or implied.
+***********************************************************/
+
 #include "sample-record.h"
 
 static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
