@@ -32,7 +32,8 @@ $(TARGET):source/console_command.o $(OBJS)
 .PHONY: sample
 sample: sample-record     \
         voiceCommand-old  \
-        curlpost          
+        curlpost          \
+        curlpost_callback      
 
 sample-record:samples/sample-record.o $(OBJS)
 	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
@@ -41,6 +42,9 @@ voiceCommand-old: source/voiceCommand-old.o $(OBJS)
 		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 curlpost: samples/curlpost.o $(OBJS)
+		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+		
+curlpost_callback: samples/curlpost_callback.o $(OBJS)
 		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 						   	
 %.o: %.cpp

@@ -46,6 +46,8 @@ voiceCommand
 
 #define VC_SPEECH_ENGINE "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\""
 char data[20868];
+#define USE_CHUNKED
+//#define DISABLE_EXPECT
 
 struct WriteThis
 {
@@ -60,7 +62,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 	if (size * nmemb < 1)
 		return 0;
 
-	if (pooh->sizeleft)
+	if (pooh->sizeleft > 0)
 	{
 		*(char *) ptr = pooh->readptr[0]; /* copy one single byte */
 		pooh->readptr++; /* advance pointer */
@@ -103,7 +105,7 @@ int main(int argc, char* argv[])
 	{
 		/* First set the URL that is about to receive our POST. */
 		curl_easy_setopt(curl, CURLOPT_URL, VC_SPEECH_ENGINE);
-	    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, m_header);
+	    //curl_easy_setopt(curl, CURLOPT_HTTPHEADER, m_header);
 		/* Now specify we want to POST data */
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
@@ -127,6 +129,7 @@ int main(int argc, char* argv[])
 		{
 			struct curl_slist *chunk = NULL;
 
+			chunk = curl_slist_append(chunk, "Content-type: audio/x-flac; rate=16000");
 			chunk = curl_slist_append(chunk, "Transfer-Encoding: chunked");
 			res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
 			/* use curl_slist_free_all() after the *perform() call to free this
