@@ -40,8 +40,9 @@ AudioProcessor::~AudioProcessor()
  */
 VC_STATUS AudioProcessor::Initialize()
 {
-    m_flac = new FLACWrapper((char*)VC_AUDIO_FILENAME);
-    m_curl = new CURLWrapper((char*)VC_AUDIO_FILENAME);
+    m_flac = new FLACDevice((char*)VC_AUDIO_FILENAME);
+    m_flac->Initialize();
+    m_curl = new CURLDevice("CurlDevice");
     m_input = new InputPort("Inputport 0",this);
     m_output = new OutputPort("Ouputport 0",this);
 
@@ -225,46 +226,3 @@ void AudioProcessor::Task()
     }
 }
 
-CURLWrapper::CURLWrapper(char* filename):m_header(NULL),m_formpost(NULL)
-{
-    curl_global_init(CURL_GLOBAL_ALL);
-    m_curl = curl_easy_init();
-
-    VC_CHECK(m_curl == NULL,,"Error Initializing Curl");
-    m_header = curl_slist_append(m_header, "Content-type: audio/x-flac; rate=16000");
-    m_buffer = (char*) malloc(400*sizeof(char));
-}
-
-CURLWrapper::~CURLWrapper()
-{
-    curl_easy_cleanup(m_curl);
-    curl_slist_free_all(m_header);
-    curl_formfree(m_formpost);
-    if(m_buffer)
-        free(m_buffer);
-}
-
-char* CURLWrapper::GetText()
-{
-    VC_MSG("Enter");
-    struct curl_httppost *lastptr = NULL;
-    curl_formadd(&m_formpost, &lastptr, CURLFORM_COPYNAME, "sendfile", CURLFORM_FILE, "audio.flac", CURLFORM_END);
-
-    curl_easy_setopt(m_curl, CURLOPT_URL,VC_SPEECH_ENGINE);
-    curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_header);
-    curl_easy_setopt(m_curl, CURLOPT_HTTPPOST, m_formpost);
-    curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, CURLWrapper::WriteData);
-    curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void*)m_buffer);
-    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 0);
-    VC_CHECK(curl_easy_perform(m_curl) != CURLE_OK,return (NULL),"Error requesting command");
-    return (m_buffer);
-}
-
-size_t CURLWrapper::WriteData(void* buffer,size_t size, size_t n, void* ptr)
-{
-    DBG_PRINT(DBG_TRACE,"Enter %d",size*n);
-    //memcpy(ptr,buffer,size*n);
-    strcpy((char*)ptr,(char*)buffer);
-    DBG_PRINT(DBG_TRACE,"Command Data %s",(char*)buffer);
-    return (size*n);
-}

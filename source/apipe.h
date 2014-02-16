@@ -55,7 +55,7 @@ public:
     /**
      * Query the pipe for available devices
      */
-    ADevice* GetDevice(VC_DEVICETYPE dev, std::string name);
+    ADevice* GetDevice(VC_DEVICETYPE dev, std::string name, const char* filename = "");
     VC_STATUS ConnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS DisconnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS ConnectPorts(InputPort* input,OutputPort* output);
@@ -71,11 +71,11 @@ private:
 /**
  * An interface to all the devices
  */
-class ADevice
+class BaseDevice
 {
 public:
-    ADevice() {};
-    virtual ~ADevice() {}
+    BaseDevice() {};
+    virtual ~BaseDevice() {}
     virtual VC_STATUS Initialize()=0;
 
     /**
@@ -107,6 +107,66 @@ public:
      * Gets the required parameters from device
      */
     virtual VC_STATUS GetParameters(OutputParams* params)=0;
+
+};
+
+class ADevice
+{
+public:
+    ADevice() {};
+    virtual ~ADevice() {}
+    virtual VC_STATUS Initialize()
+    {
+    	return (VC_NOT_IMPLEMENTED);
+    }
+
+    /**
+     * Function to notify the device for any events
+     */
+    virtual VC_STATUS Notify(VC_EVENT* evt)
+    {
+    	return (VC_NOT_IMPLEMENTED);
+    }
+
+    /**
+     * Get the inputport of the device
+     */
+    virtual InputPort* Input(int portno)
+    {
+    	return (NULL);
+    }
+
+    /**
+     * Get the output port of the device
+     */
+    virtual OutputPort* Output(int portno)
+    {
+    	return (NULL);
+    }
+
+    /**
+     * Send a command to device. This method triggers the device to start or stop
+     */
+    virtual VC_STATUS SendCommand(VC_CMD cmd)
+    {
+    	return (VC_NOT_IMPLEMENTED);
+    }
+
+    /**
+     * Sets the required parameters for device
+     */
+    virtual VC_STATUS SetParameters(const InputParams* params)
+    {
+    	return (VC_NOT_IMPLEMENTED);
+    }
+
+    /**
+     * Gets the required parameters from device
+     */
+    virtual VC_STATUS GetParameters(OutputParams* params)
+    {
+    	return (VC_NOT_IMPLEMENTED);
+    }
 
 };
 
@@ -151,6 +211,7 @@ public:
     VC_STATUS PushBuffer(Buffer* buf);
     Buffer* GetBuffer();
     VC_STATUS SetReceiver(InputPort* inport);
+    VC_STATUS ReturnBuffer(Buffer* buf);
     const char* c_str()
     {
         return (m_name.c_str());

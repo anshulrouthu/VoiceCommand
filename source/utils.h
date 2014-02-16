@@ -97,9 +97,12 @@ typedef enum
 {
     VC_CAPTURE_DEVICE=0,
     VC_AUDIO_PROCESSOR,
+    VC_FLAC_DEVICE,
+    VC_CURL_DEVICE,
     VC_TEXT_PROCESSOR,
     VC_COMMAND_PROCESSOR,
-    VC_FILECAPTURE_DEVICE
+    VC_FILESINK_DEVICE,
+    VC_FILESRC_DEVICE
 
 }VC_DEVICETYPE;
 
@@ -117,6 +120,7 @@ typedef enum
     TAG_START,
     TAG_BREAK,
     TAG_END,
+    TAG_EOF
 }BUF_TAG;
 
 template <typename T>

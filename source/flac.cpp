@@ -18,40 +18,89 @@ voiceCommand
  */
 #include "flac.h"
 
-FLACWrapper::FLACWrapper(char* filename):m_filename(filename)
+FLACDevice::FLACDevice(std::string name, const char* filename) :
+		m_filename(filename),
+		m_name (name)
 {
    m_encoder = FLAC__stream_encoder_new();
    VC_CHECK(m_encoder == NULL,,"Error Initializing FLAC encoder");
    setParameters();
 }
 
-FLACWrapper::~FLACWrapper()
+FLACDevice::~FLACDevice()
 {
     FLAC__metadata_object_delete(m_metadata[0]);
     FLAC__metadata_object_delete(m_metadata[1]);
     FLAC__stream_encoder_delete(m_encoder);
+    delete m_input;
+    delete m_output;
 }
 
-VC_STATUS FLACWrapper::InitiateFLACCapture()
+VC_STATUS FLACDevice::Initialize()
+{
+	m_input = new InputPort("FLACInput 0", this);
+	m_output = new OutputPort("FLACOutput 0",this);
+
+	return (VC_SUCCESS);
+}
+
+VC_STATUS FLACDevice::SendCommand(VC_CMD cmd)
+{
+    switch (cmd)
+    {
+    case VC_CMD_START:
+        FLAC__StreamEncoderInitStatus init_status;
+
+        setParameters();
+        init_status = FLAC__stream_encoder_init_stream(m_encoder, FLACDevice::write_callback, NULL, NULL, NULL, (void*)this);
+        VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
+
+        break;
+    case VC_CMD_STOP:
+        FLAC__stream_encoder_finish(m_encoder);
+        break;
+    }
+    return (VC_SUCCESS);
+}
+
+VC_STATUS FLACDevice::Notify(VC_EVENT* evt)
+{
+	Buffer* buf = m_input->GetFilledBuffer();
+	WriteData(buf->GetData(),buf->GetSamples());
+	m_input->RecycleBuffer(buf);
+	return (VC_SUCCESS);
+}
+
+InputPort* FLACDevice::Input(int portno)
+{
+	return (m_input);
+}
+
+OutputPort* FLACDevice::Output(int portno)
+{
+	return (m_output);
+}
+
+VC_STATUS FLACDevice::InitiateFLACCapture()
 {
     VC_MSG("Enter");
     FLAC__StreamEncoderInitStatus init_status;
 
     setParameters();
-    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACWrapper::progress_callback, &m_cdata);
+    init_status = FLAC__stream_encoder_init_file(m_encoder, m_filename, FLACDevice::progress_callback, &m_cdata);
     VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",FLAC__StreamEncoderInitStatusString[init_status]);
 
     return (VC_SUCCESS);
 }
 
-VC_STATUS FLACWrapper::CloseFLACCapture()
+VC_STATUS FLACDevice::CloseFLACCapture()
 {
     VC_MSG("Enter");
     FLAC__stream_encoder_finish(m_encoder);
     m_cdata.samples = 0;
     return (VC_SUCCESS);
 }
-VC_STATUS FLACWrapper::setParameters()
+VC_STATUS FLACDevice::setParameters()
 {
     bool ok = true;
     FLAC__StreamMetadata_VorbisComment_Entry entry;
@@ -84,7 +133,7 @@ VC_STATUS FLACWrapper::setParameters()
     return (VC_SUCCESS);
 }
 
-int FLACWrapper::WriteData(void* data, int samples)
+int FLACDevice::WriteData(void* data, int samples)
 {
     VC_TRACE("Enter");
     FLAC__byte* buffer;
@@ -110,8 +159,7 @@ int FLACWrapper::WriteData(void* data, int samples)
     return (m_cdata.samples);
 }
 
-void FLACWrapper::progress_callback(const FLAC__StreamEncoder *m_encoder, FLAC__uint64 bytes_written,
-    FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data)
+void FLACDevice::progress_callback(const FLAC__StreamEncoder *m_encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data)
 {
     (void) m_encoder, (void) client_data;
 
@@ -119,3 +167,12 @@ void FLACWrapper::progress_callback(const FLAC__StreamEncoder *m_encoder, FLAC__
     fprintf(stderr, "wrote %llu bytes, %llu samples, %u/%u frames\n", bytes_written, samples_written, frames_written, total_frames_estimate);
 }
 
+FLAC__StreamEncoderWriteStatus FLACDevice::write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data)
+{
+	FLACDevice* self = static_cast<FLACDevice*>(client_data);
+	Buffer* buf = self->Output(0)->GetBuffer();
+	buf->WriteData((void*)buffer,bytes);
+	self->Output(0)->PushBuffer(buf);
+	return (FLAC__STREAM_ENCODER_WRITE_STATUS_OK);
+
+}

@@ -13,7 +13,8 @@ voiceCommand
 #include "apipe.h"
 #include "capturedevice.h"
 #include "audio_processor.h"
-#include "file_capture.h"
+#include "file_io.h"
+#include "flac.h"
 
 /**
  * Number of input buffers
@@ -35,7 +36,7 @@ APipe::APipe(std::string name) :
  * @param[in] name of the device to be names for identification
  * @return device instance of the device available based on type
  */
-ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name)
+ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name, const char* filename)
 {
     VC_TRACE("Enter");
     switch (devtype)
@@ -46,13 +47,22 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name)
     case VC_AUDIO_PROCESSOR:
         return (new AudioProcessor(name));
         break;
+    case VC_FLAC_DEVICE:
+    	return (new FLACDevice(name));
+    	break;
+    case VC_CURL_DEVICE:
+    	return (new CURLDevice(name));
+    	break;
     case VC_TEXT_PROCESSOR:
         break;
     case VC_COMMAND_PROCESSOR:
         break;
-    case VC_FILECAPTURE_DEVICE:
-        return (new FileCapture(name));
+    case VC_FILESINK_DEVICE:
+        return (new FileSink(name, filename));
         break;
+    case VC_FILESRC_DEVICE:
+    	return (new FileSrc(name, filename));
+    	break;
     default:
         break;
     }
@@ -246,4 +256,13 @@ Buffer* OutputPort::GetBuffer()
     }
 
     return (NULL);
+}
+
+/**
+ * return the buffer to input port if the buffer is not used
+ * @param buf
+ */
+VC_STATUS OutputPort::ReturnBuffer(Buffer* buf)
+{
+	return (m_receiver->RecycleBuffer(buf));
 }

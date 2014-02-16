@@ -16,7 +16,10 @@ MAINFILES:=source/console_command.cpp    \
            samples/sample-record.cpp     \
            source/voiceCommand-old.cpp   \
            samples/curlpost.cpp          \
-           source/tests/unittests.cpp
+           source/tests/unittests.cpp    \
+           source/tests/test_flac.cpp    \
+           source/tests/test_curl.cpp
+           
 OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
 .PHONY: all
@@ -52,7 +55,15 @@ curlpost_callback: samples/curlpost_callback.o $(OBJS)
 			
 ############ ----- building unit tests ----- ##############
 
-tests: unittests
+tests: unittests      \
+	   test_flac      \
+	   test_curl
+
+test_curl: source/tests/test_curl.o $(OBJS)
+	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	   	
+test_flac: source/tests/test_flac.o $(OBJS)
+	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 	   	
 unittests: source/tests/unittests.o $(OBJS)
 	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)

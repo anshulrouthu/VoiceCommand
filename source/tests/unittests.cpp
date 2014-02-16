@@ -20,7 +20,7 @@ voiceCommand
 #include "utils.h"
 #include <UnitTest++.h>
 #include "apipe.h"
-#include "file_capture.h"
+#include "file_io.h"
 
 class TestDevice: public ADevice
 {
@@ -130,7 +130,7 @@ SUITE(APipeFrameworkTest)
         CHECK_EQUAL(input->c_str(),"Input 0");
         CHECK_EQUAL(output->c_str(),"Output 0");
 
-        CHECK_EQUAL(!!output->GetBuffer(),NULL);
+        CHECK_EQUAL(!!output->GetBuffer(),!!NULL);
         CHECK_EQUAL(pipe->ConnectPorts(input,output),VC_SUCCESS);
         Buffer* buf = output->GetBuffer();
         CHECK(!!buf);
@@ -147,20 +147,28 @@ SUITE(APipeFrameworkTest)
         delete output;
     }
 
-    TEST(FileCaptureTEST)
+    TEST(FileIOTEST)
     {
-        DBGPRINT(DBG_ALWAYS,("Testing FileCaptureTEST\n"));
+        DBGPRINT(DBG_ALWAYS,("Testing FileIOTEST\n"));
         APipe* pipe = new APipe("Pipe 0");
-        FileCapture* dst = new FileCapture("FileCapture");
+        FileSink* dst = new FileSink("FileSink","FileSink.out");
+        FileSrc* src = new FileSrc("FileSrc", "FileSink.out");
         OutputPort* output = new OutputPort("Output 0", NULL);
+        InputPort* input = new InputPort("Input 0", NULL);
 
         dst->Initialize();
+        src->Initialize();
 
         CHECK_EQUAL(pipe->c_str(),"Pipe 0");
-        CHECK_EQUAL(dst->c_str(),"FileCapture");
+        CHECK_EQUAL(dst->c_str(),"FileSink");
+        CHECK_EQUAL(src->c_str(),"FileSrc");
         CHECK_EQUAL(output->c_str(),"Output 0");
+        CHECK_EQUAL(input->c_str(),"Input 0");
 
         CHECK_EQUAL(pipe->ConnectPorts(dst->Input(0),output),VC_SUCCESS);
+        CHECK_EQUAL(pipe->ConnectPorts(input,src->Output(0)),VC_SUCCESS);
+
+        CHECK_EQUAL(dst->SendCommand(VC_CMD_START), VC_SUCCESS);
 
         Buffer* buf = output->GetBuffer();
         CHECK(!!buf);
@@ -169,15 +177,42 @@ SUITE(APipeFrameworkTest)
         CHECK_EQUAL(pipe->DisconnectPorts(dst->Input(0),output),VC_SUCCESS);
         delete dst;
 
+        CHECK_EQUAL(src->SendCommand(VC_CMD_START), VC_SUCCESS);
+
+        //wait untill a buffer is pushed but source device
+        while(!input->IsBufferAvailable());
+
+        CHECK(input->IsBufferAvailable());
+
+    	buf = input->GetFilledBuffer();
+    	CHECK(!!buf);
+
+    	CHECK_EQUAL(buf->GetTag(),TAG_START);
+    	CHECK_EQUAL(input->RecycleBuffer(buf),VC_SUCCESS);
+
+        //wait untill a buffer is pushed but source device
+        while(!input->IsBufferAvailable());
+
+        CHECK(input->IsBufferAvailable());
+
+    	buf = input->GetFilledBuffer();
+    	CHECK(!!buf);
+    	CHECK_EQUAL((char*)buf->GetData(), "VoiceCommand");
+
+        CHECK_EQUAL(src->SendCommand(VC_CMD_STOP), VC_SUCCESS);
+        CHECK_EQUAL(pipe->DisconnectPorts(input,src->Output(0)),VC_SUCCESS);
+        delete src;
+
         FILE* fp;
         char c[12];
-        fp = fopen("FileCapture.out","rb");
+        fp = fopen("FileSink.out","rb");
         fread(c,sizeof(char),12,fp);
         CHECK_EQUAL(c,"VoiceCommand");
 
         fclose(fp);
         delete pipe;
         delete output;
+        delete input;
 
     }
 

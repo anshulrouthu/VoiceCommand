@@ -17,15 +17,10 @@ voiceCommand
 #include "flac.h"
 #include "timer.h"
 #include <json/json.h>
-#include "curl/curl.h"
 #include "buffer.h"
 #include "worker.h"
 #include "apipe.h"
-
-#define VC_SPEECH_ENGINE "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\""
-#define VC_AUDIO_FILENAME "audio.flac"
-
-class CURLWrapper;
+#include "curldevice.h"
 
 class AudioProcessor: public WorkerThread, public ADevice
 {
@@ -51,8 +46,8 @@ public:
 private:
 
     virtual void Task();
-    FLACWrapper* m_flac;
-    CURLWrapper* m_curl;
+    FLACDevice* m_flac;
+    CURLDevice* m_curl;
     Json::Reader m_reader;
     char m_text[4*1024];
     Mutex m_mutex;
@@ -60,26 +55,6 @@ private:
     std::string m_name;
     InputPort* m_input;
     OutputPort* m_output;
-};
-
-
-class CURLWrapper
-{
-public:
-    CURLWrapper(char* filename);
-    ~CURLWrapper();
-    char* GetText();
-    static size_t WriteData(void *buffer, size_t size, size_t n, void *ptr);
-
-private:
-    const char* c_str()
-    {
-        return ("CURLWrapper");
-    }
-    CURL* m_curl;
-    struct curl_slist *m_header;
-    char* m_buffer;
-    struct curl_httppost* m_formpost;
 };
 
 #endif /*AUDIO_PROCESSOR_H_*/

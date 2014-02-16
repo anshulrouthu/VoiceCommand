@@ -22,27 +22,19 @@ voiceCommand
 
 #include "apipe.h"
 #include "utils.h"
+#include "worker.h"
 
-class FileCapture: public ADevice
+class FileSink: public ADevice
 {
 public:
-    FileCapture(std::string name);
-    ~FileCapture();
+    FileSink(std::string name, const char* filename);
+    virtual ~FileSink();
 
     virtual VC_STATUS Initialize();
     virtual VC_STATUS Notify(VC_EVENT* evt);
     virtual InputPort* Input(int portno);
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
-    virtual VC_STATUS SetParameters(const InputParams* params)
-    {
-        return (VC_NOT_IMPLEMENTED);
-    }
-
-    virtual VC_STATUS GetParameters(OutputParams* params)
-    {
-        return (VC_NOT_IMPLEMENTED);
-    }
 
     const char* c_str()
     {
@@ -54,7 +46,31 @@ private:
     InputPort* m_input;
     OutputPort* m_output;
     std::string m_name;
+    const char* m_filename;
 
 };
 
+class FileSrc : public ADevice, public WorkerThread
+{
+public:
+	FileSrc(std::string name, const char* in_file);
+	virtual ~FileSrc();
+
+    virtual VC_STATUS Initialize();
+    virtual OutputPort* Output(int portno);
+    virtual VC_STATUS SendCommand(VC_CMD cmd);
+
+    const char* c_str()
+    {
+        return (m_name.c_str());
+    }
+private:
+    virtual void Task();
+    VC_STATUS ReadData();
+    FILE* m_file;
+    OutputPort* m_output;
+    std::string m_name;
+    const char* m_filename;
+
+};
 #endif /* FILE_CAPTURE_H_ */

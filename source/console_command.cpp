@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     src = pipe->GetDevice(VC_CAPTURE_DEVICE,"CaptureDevice 0");
     if(filecapture)
     {
-        sink = pipe->GetDevice(VC_FILECAPTURE_DEVICE,"FileCapture");
+        sink = pipe->GetDevice(VC_FILESINK_DEVICE,"FileCapture");
     }
     else
     {
