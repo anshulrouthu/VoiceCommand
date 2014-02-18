@@ -1,3 +1,15 @@
+/***********************************************************
+ voiceCommand
+
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+
+ All rights reserved.
+
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
+
 /*
  * curl.h
  *
@@ -16,7 +28,7 @@
 #define VC_SPEECH_ENGINE "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\""
 #define VC_AUDIO_FILENAME "audio.flac"
 
-class CURLDevice : public ADevice, public WorkerThread
+class CURLDevice: public ADevice, public WorkerThread
 {
 public:
     CURLDevice(std::string name, const char* filename = "audio.flac");
@@ -50,8 +62,5 @@ private:
     Mutex m_mutex;
     ConditionVariable m_cv;
 };
-
-
-
 
 #endif /* CURL_H_ */

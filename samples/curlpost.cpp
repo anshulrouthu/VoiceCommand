@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * curlpost.cpp
@@ -41,7 +41,8 @@ int main(int argc, char *argv[])
     if (curl)
     {
         headerlist = curl_slist_append(headerlist, "Content-type: audio/x-flac; rate=16000");
-        curl_easy_setopt(curl, CURLOPT_URL,"https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\"");
+        curl_easy_setopt(curl, CURLOPT_URL,
+            "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\"");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
         curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);

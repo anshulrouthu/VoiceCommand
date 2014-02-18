@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * file_capture.cpp
@@ -96,30 +96,30 @@ VC_STATUS FileSink::SendCommand(VC_CMD cmd)
     return (VC_SUCCESS);
 }
 
-FileSrc::FileSrc(std::string name, const char* in_file):
-		m_name(name),
-		m_filename(in_file)
+FileSrc::FileSrc(std::string name, const char* in_file) :
+    m_name(name),
+    m_filename(in_file)
 {
 }
 
 FileSrc::~FileSrc()
 {
-	fclose(m_file);
-	delete m_output;
+    fclose(m_file);
+    delete m_output;
 }
 
 VC_STATUS FileSrc::Initialize()
 {
-	VC_TRACE("Enter");
-	m_output = new OutputPort("FileSrc Output", this);
-	m_file = fopen(m_filename,"rb");
-	VC_CHECK(!m_file,return (VC_FAILURE),"Error opening file %s",m_filename);
-	return (VC_SUCCESS);
+    VC_TRACE("Enter");
+    m_output = new OutputPort("FileSrc Output", this);
+    m_file = fopen(m_filename, "rb");
+    VC_CHECK(!m_file, return (VC_FAILURE), "Error opening file %s", m_filename);
+    return (VC_SUCCESS);
 }
 
 OutputPort* FileSrc::Output(int portno)
 {
-	return (m_output);
+    return (m_output);
 }
 
 VC_STATUS FileSrc::SendCommand(VC_CMD cmd)
@@ -138,31 +138,31 @@ VC_STATUS FileSrc::SendCommand(VC_CMD cmd)
 
 void FileSrc::Task()
 {
-	VC_TRACE("Enter");
+    VC_TRACE("Enter");
 
-	Buffer* buf = m_output->GetBuffer();
-	buf->SetTag(TAG_START);
-	m_output->PushBuffer(buf);
+    Buffer* buf = m_output->GetBuffer();
+    buf->SetTag(TAG_START);
+    m_output->PushBuffer(buf);
 
-	while (m_state)
-	{
-		Buffer* buf = m_output->GetBuffer();
-		size_t size = fread(buf->GetData(), 1, 1024, m_file);
+    while (m_state)
+    {
+        Buffer* buf = m_output->GetBuffer();
+        size_t size = fread(buf->GetData(), 1, 1024, m_file);
 
-		VC_TRACE("Size of data read %d",size);
+        VC_TRACE("Size of data read %d", size);
 
-		if (size > 0)
-		{
-			buf->SetSize(size);
-			VC_CHECK(m_output->PushBuffer(buf) != VC_SUCCESS,,"Failed to push buffer");
-		}
-		else
-		{
-			VC_TRACE("End of file reached");
-			buf->SetTag(TAG_END);
-			m_output->PushBuffer(buf);
-			break;
-		}
-	}
+        if (size > 0)
+        {
+            buf->SetSize(size);
+            VC_CHECK(m_output->PushBuffer(buf) != VC_SUCCESS,, "Failed to push buffer");
+        }
+        else
+        {
+            VC_TRACE("End of file reached");
+            buf->SetTag(TAG_END);
+            m_output->PushBuffer(buf);
+            break;
+        }
+    }
 
 }

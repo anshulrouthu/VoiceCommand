@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * file_capture.h
@@ -50,11 +50,11 @@ private:
 
 };
 
-class FileSrc : public ADevice, public WorkerThread
+class FileSrc: public ADevice, public WorkerThread
 {
 public:
-	FileSrc(std::string name, const char* in_file);
-	virtual ~FileSrc();
+    FileSrc(std::string name, const char* in_file);
+    virtual ~FileSrc();
 
     virtual VC_STATUS Initialize();
     virtual OutputPort* Output(int portno);

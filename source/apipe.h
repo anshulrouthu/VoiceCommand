@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * apipe.h
@@ -33,7 +33,7 @@ class ADevice;
 typedef struct
 {
     int threshold; //Threshold audio input level
-}InputParams;
+} InputParams;
 
 /**
  * Output parameters from the devices
@@ -41,7 +41,7 @@ typedef struct
 typedef struct
 {
     char** device_list; //Hardware devices on the system
-}OutputParams;
+} OutputParams;
 
 /**
  * A pipe that maintains all the devices and their connections
@@ -50,7 +50,9 @@ class APipe
 {
 public:
     APipe(std::string name);
-    ~APipe(){}
+    ~APipe()
+    {
+    }
 
     /**
      * Query the pipe for available devices
@@ -58,8 +60,8 @@ public:
     ADevice* GetDevice(VC_DEVICETYPE dev, std::string name, const char* filename = "");
     VC_STATUS ConnectDevices(ADevice* src, ADevice* dst);
     VC_STATUS DisconnectDevices(ADevice* src, ADevice* dst);
-    VC_STATUS ConnectPorts(InputPort* input,OutputPort* output);
-    VC_STATUS DisconnectPorts(InputPort* input,OutputPort* output);
+    VC_STATUS ConnectPorts(InputPort* input, OutputPort* output);
+    VC_STATUS DisconnectPorts(InputPort* input, OutputPort* output);
     const char* c_str()
     {
         return (m_name.c_str());
@@ -74,8 +76,13 @@ private:
 class BaseDevice
 {
 public:
-    BaseDevice() {};
-    virtual ~BaseDevice() {}
+    BaseDevice()
+    {
+    }
+    ;
+    virtual ~BaseDevice()
+    {
+    }
     virtual VC_STATUS Initialize()=0;
 
     /**
@@ -113,11 +120,16 @@ public:
 class ADevice
 {
 public:
-    ADevice() {};
-    virtual ~ADevice() {}
+    ADevice()
+    {
+    }
+    ;
+    virtual ~ADevice()
+    {
+    }
     virtual VC_STATUS Initialize()
     {
-    	return (VC_NOT_IMPLEMENTED);
+        return (VC_NOT_IMPLEMENTED);
     }
 
     /**
@@ -125,7 +137,7 @@ public:
      */
     virtual VC_STATUS Notify(VC_EVENT* evt)
     {
-    	return (VC_NOT_IMPLEMENTED);
+        return (VC_NOT_IMPLEMENTED);
     }
 
     /**
@@ -133,7 +145,7 @@ public:
      */
     virtual InputPort* Input(int portno)
     {
-    	return (NULL);
+        return (NULL);
     }
 
     /**
@@ -141,7 +153,7 @@ public:
      */
     virtual OutputPort* Output(int portno)
     {
-    	return (NULL);
+        return (NULL);
     }
 
     /**
@@ -149,7 +161,7 @@ public:
      */
     virtual VC_STATUS SendCommand(VC_CMD cmd)
     {
-    	return (VC_NOT_IMPLEMENTED);
+        return (VC_NOT_IMPLEMENTED);
     }
 
     /**
@@ -157,7 +169,7 @@ public:
      */
     virtual VC_STATUS SetParameters(const InputParams* params)
     {
-    	return (VC_NOT_IMPLEMENTED);
+        return (VC_NOT_IMPLEMENTED);
     }
 
     /**
@@ -165,7 +177,7 @@ public:
      */
     virtual VC_STATUS GetParameters(OutputParams* params)
     {
-    	return (VC_NOT_IMPLEMENTED);
+        return (VC_NOT_IMPLEMENTED);
     }
 
 };

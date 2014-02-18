@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * worker.h
@@ -46,6 +46,7 @@ public:
     ~Mutex();
     int Lock();
     int Unlock();
+    int TryLock();
 private:
     pthread_mutex_t m_mutex;
 
@@ -89,6 +90,48 @@ private:
 protected:
     bool m_state;
 
+};
+
+/**
+ * Class provides automatic mechanism to lock the mutex in constructor and
+ * unlock the mutex in destructor, when object is out of scope
+ * @param mutex
+ */
+class AutoMutex
+{
+public:
+    AutoMutex(Mutex* mutex);
+    ~AutoMutex();
+    const char* c_str()
+    {
+        return ("AutoMutex");
+    }
+private:
+    VC_STATUS Lock();
+    VC_STATUS Unlock();
+    Mutex* m_mutex;
+    bool m_locked;
+};
+
+/**
+ * Class provides automatic mechanism to unlock the mutex in constructor and
+ * lock the mutex in destructor, when object is out of scope
+ * @param mutex
+ */
+class AutoMutexRelease
+{
+public:
+    AutoMutexRelease(Mutex* mutex);
+    ~AutoMutexRelease();
+    const char* c_str()
+    {
+        return ("AutoMutexRelease");
+    }
+private:
+    VC_STATUS Lock();
+    VC_STATUS Unlock();
+    Mutex* m_mutex;
+    bool m_locked;
 };
 
 #endif /* WORKER_THREAD_H_ */

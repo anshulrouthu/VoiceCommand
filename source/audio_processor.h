@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 #ifndef AUDIO_PROCESSOR_H_
 #define AUDIO_PROCESSOR_H_
@@ -49,7 +49,7 @@ private:
     FLACDevice* m_flac;
     CURLDevice* m_curl;
     Json::Reader m_reader;
-    char m_text[4*1024];
+    char m_text[4 * 1024];
     Mutex m_mutex;
     ConditionVariable m_cv;
     std::string m_name;

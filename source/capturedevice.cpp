@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /**
  * @file capturedevice.cpp
@@ -39,7 +39,7 @@ CaptureDevice::CaptureDevice(std::string name) :
  */
 CaptureDevice::~CaptureDevice()
 {
-    alcMakeContextCurrent(NULL);
+    alcMakeContextCurrent (NULL);
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
 
@@ -282,9 +282,8 @@ void CaptureDevice::Task()
                 else if (!process_data)
                 {
                     total_samples = 0;
-                    m_mutex.Lock();
+                    AutoMutex automutex(&m_mutex);
                     m_cv.Wait(50);
-                    m_mutex.Unlock();
                 }
 
                 /**
@@ -318,9 +317,8 @@ void CaptureDevice::Task()
             }
             else /* if there are no samples wait 50 ms*/
             {
-                m_mutex.Lock();
+                AutoMutex automutex(&m_mutex);
                 m_cv.Wait(50);
-                m_mutex.Unlock();
             }
         }
     }

@@ -1,5 +1,4 @@
 
-CC=g++ 
 CFLAGS=-Wall
 TARGET=voiceCommand
 SRC=./source
@@ -11,7 +10,7 @@ TMP=tmp
 INC= -Isource/ -Itarget/include/
 LDPATH= -Ltarget/lib/
 
-#list of files containing main() function, to prevent conflicts while compiling
+#list of files containing main() function, to prevent conflicts while linking
 MAINFILES:=source/console_command.cpp    \
            samples/sample-record.cpp     \
            source/voiceCommand-old.cpp   \
@@ -22,15 +21,20 @@ MAINFILES:=source/console_command.cpp    \
            
 OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
 
+############ ----- build main application ----- ##############
+
 .PHONY: all
 all: bin $(OBJS) $(TARGET) sample
 	@cp $(SRC)/scripts/* $(BIN)/
 	@echo "Build successful"
+
 bin: 
 	@mkdir -p $@
 	
 $(TARGET):source/console_command.o $(OBJS) 
 	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+
+############ ----- build samples ----- ##############
 
 .PHONY: sample
 sample: sample-record     \
@@ -53,8 +57,9 @@ curlpost_callback: samples/curlpost_callback.o $(OBJS)
 %.o: %.cpp
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 			
-############ ----- building unit tests ----- ##############
+############ ----- build tests ----- ##############
 
+.PHONY: tests
 tests: unittests      \
 	   test_flac      \
 	   test_curl

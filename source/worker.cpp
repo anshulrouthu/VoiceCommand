@@ -1,21 +1,15 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
-/*
- * worker.cpp
- *
- *  Created on: Oct 4, 2013
- *      Author: anshul
- */
 /**
  * @file worker.cpp
  *
@@ -116,6 +110,15 @@ int Mutex::Unlock()
 }
 
 /**
+ * Tries to lock the mutex, returns when the mutex is already locked
+ * @return 0 if lock is acquired
+ */
+int Mutex::TryLock()
+{
+    return (pthread_mutex_trylock(&m_mutex));
+}
+
+/**
  * Conditionvariable Constructor
  * @param [in] mutex
  */
@@ -172,6 +175,98 @@ int ConditionVariable::Wait(int milliseconds)
 int ConditionVariable::Notify()
 {
     return (pthread_cond_signal(&m_condition));
+}
+
+/**
+ * Constructor for Automutex
+ */
+AutoMutex::AutoMutex(Mutex* mutex) :
+    m_mutex(mutex),
+    m_locked(false)
+{
+    Lock();
+}
+
+/**
+ * Destructor Automutex
+ */
+AutoMutex::~AutoMutex()
+{
+    Unlock();
+}
+
+/**
+ * Lock the mutex, this is called in the constructor of this class
+ */
+VC_STATUS AutoMutex::Lock()
+{
+    if (m_mutex && !m_locked)
+    {
+        int err = m_mutex->Lock();
+        VC_CHECK(err != 0, return (VC_FAILURE), "Error(%d): Locking Mutex ", err);
+        m_locked = true;
+    }
+    return (VC_SUCCESS);
+}
+
+/**
+ * Unlock the mutex, this is called from destructor of the class
+ */
+VC_STATUS AutoMutex::Unlock()
+{
+    if (m_mutex && m_locked)
+    {
+        int err = m_mutex->Unlock();
+        VC_CHECK(err != 0, return (VC_FAILURE), "Error(%d): Unlocking Mutex ", err);
+        m_locked = false;
+    }
+    return (VC_SUCCESS);
+}
+
+/**
+ * Constructor for Automutexrelease
+ */
+AutoMutexRelease::AutoMutexRelease(Mutex* mutex) :
+    m_mutex(mutex),
+    m_locked(true)
+{
+    Unlock();
+}
+
+/**
+ * Destructor for Automutexrelease
+ */
+AutoMutexRelease::~AutoMutexRelease()
+{
+    Lock();
+}
+
+/**
+ * Locks the mutex, this is called from destructor
+ */
+VC_STATUS AutoMutexRelease::Lock()
+{
+    if (m_mutex && !m_locked)
+    {
+        int err = m_mutex->Lock();
+        VC_CHECK(err != 0, return (VC_FAILURE), "Error(%d): Locking Mutex ", err);
+        m_locked = true;
+    }
+    return (VC_SUCCESS);
+}
+
+/**
+ * Unlocks the mutex, this is called from constructor
+ */
+VC_STATUS AutoMutexRelease::Unlock()
+{
+    if (m_mutex && m_locked)
+    {
+        int err = m_mutex->Unlock();
+        VC_CHECK(err != 0, return (VC_FAILURE), "Error(%d): Unlocking Mutex ", err);
+        m_locked = false;
+    }
+    return (VC_SUCCESS);
 }
 
 #endif /* WORKERTHREAD_CPP_ */

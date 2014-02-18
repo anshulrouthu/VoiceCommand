@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * flac.h
@@ -29,14 +29,13 @@ voiceCommand
 typedef struct client_data
 {
     int samples;
-}ClientData;
-
+} ClientData;
 
 #define READSIZE 512
 #define SAMPLE_RATE 16000
 #define BITS_PER_SECOND 16
 
-class FLACDevice : public ADevice
+class FLACDevice: public ADevice
 {
 public:
     FLACDevice(std::string name, const char* filename = "audio.flac");
@@ -53,8 +52,10 @@ public:
     VC_STATUS InitiateFLACCapture();
     VC_STATUS CloseFLACCapture();
 private:
-    static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written, FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
-    static FLAC__StreamEncoderWriteStatus write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data);
+    static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written,
+        FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
+    static FLAC__StreamEncoderWriteStatus write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[],
+        size_t bytes, unsigned samples, unsigned current_frame, void *client_data);
 
     const char* c_str()
     {

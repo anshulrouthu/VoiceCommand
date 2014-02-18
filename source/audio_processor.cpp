@@ -1,19 +1,19 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 #include "audio_processor.h"
 #define NUM_OF_BUFFERS 128
 
-AudioProcessor::AudioProcessor(std::string name):
+AudioProcessor::AudioProcessor(std::string name) :
     m_cv(m_mutex),
     m_name(name)
 {
@@ -40,11 +40,11 @@ AudioProcessor::~AudioProcessor()
  */
 VC_STATUS AudioProcessor::Initialize()
 {
-    m_flac = new FLACDevice((char*)VC_AUDIO_FILENAME);
+    m_flac = new FLACDevice((char*) VC_AUDIO_FILENAME);
     m_flac->Initialize();
     m_curl = new CURLDevice("CurlDevice");
-    m_input = new InputPort("Inputport 0",this);
-    m_output = new OutputPort("Ouputport 0",this);
+    m_input = new InputPort("Inputport 0", this);
+    m_output = new OutputPort("Ouputport 0", this);
 
     return (VC_SUCCESS);
 }
@@ -72,10 +72,9 @@ OutputPort* AudioProcessor::Output(int portno)
  */
 VC_STATUS AudioProcessor::Notify(VC_EVENT* evt)
 {
-    //TODO: update the api to notify different type of events
-    m_mutex.Lock();
+    //TODO: update the api to notify different type of events, as needed
+    AutoMutex automutex(&m_mutex);
     m_cv.Notify();
-    m_mutex.Unlock();
 
     return (VC_SUCCESS);
 }
@@ -160,15 +159,15 @@ VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
 void AudioProcessor::Task()
 {
     VC_ALL("Enter");
-    bool senddata=false;
-    while(m_state)
+    bool senddata = false;
+    while (m_state)
     {
-        if(m_input->IsBufferAvailable())
+        if (m_input->IsBufferAvailable())
         {
             char text[2048] = "";
             Buffer* buf = m_input->GetFilledBuffer();
 
-            if(buf->GetTag() == TAG_START)
+            if (buf->GetTag() == TAG_START)
             {
                 InitiateDataProcessing();
             }
@@ -177,9 +176,9 @@ void AudioProcessor::Task()
                 VC_MSG("GOT TAG_BREAK");
                 CloseDataProcessing(text);
 
-                strcat(m_text," ");
-                strcat(m_text,text);
-                VC_ALL("GotText %s\n",m_text);
+                strcat(m_text, " ");
+                strcat(m_text, text);
+                VC_ALL("GotText %s\n", m_text);
                 usleep(5000);
                 InitiateDataProcessing();
 
@@ -189,11 +188,11 @@ void AudioProcessor::Task()
             {
                 VC_MSG("GOT TAG_END");
                 CloseDataProcessing(text);
-                strcat(m_text," ");
-                strcat(m_text,text);
-                VC_ALL("GotText %s\n",m_text);
+                strcat(m_text, " ");
+                strcat(m_text, text);
+                VC_ALL("GotText %s\n", m_text);
 
-                if (strcmp(m_text," "))
+                if (strcmp(m_text, " "))
                 {
                     char notifycmd[4 * 1000] = "notify-send -t 10 \"Received Text\" \"";
                     strcat(notifycmd, m_text);
@@ -207,7 +206,7 @@ void AudioProcessor::Task()
             }
             else
             {
-                senddata=true;
+                senddata = true;
                 m_flac->WriteData(buf->GetData(), buf->GetSamples());
             }
 
@@ -216,11 +215,10 @@ void AudioProcessor::Task()
         else
         {
             //wait condition
+            AutoMutex automutex(&m_mutex);
             while (!m_input->IsBufferAvailable() && m_state)
             {
-                m_mutex.Lock();
                 m_cv.Wait();
-                m_mutex.Unlock();
             }
         }
     }

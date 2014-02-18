@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * voiceCommand.cpp
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
 {
     int c;
     int threshold = 1500;
-    bool autosetup = false, filecapture=false;
+    bool autosetup = false, filecapture = false;
     ADevice* src;
     ADevice* sink;
     while ((c = getopt(argc, argv, "sf?l:d:t:")) != -1)
@@ -58,14 +58,14 @@ int main(int argc, char* argv[])
     }
 
     APipe* pipe = new APipe("Pipe 0");
-    src = pipe->GetDevice(VC_CAPTURE_DEVICE,"CaptureDevice 0");
-    if(filecapture)
+    src = pipe->GetDevice(VC_CAPTURE_DEVICE, "CaptureDevice 0");
+    if (filecapture)
     {
-        sink = pipe->GetDevice(VC_FILESINK_DEVICE,"FileCapture");
+        sink = pipe->GetDevice(VC_FILESINK_DEVICE, "FileCapture");
     }
     else
     {
-        sink = pipe->GetDevice(VC_AUDIO_PROCESSOR,"AudioProcessor 0");
+        sink = pipe->GetDevice(VC_AUDIO_PROCESSOR, "AudioProcessor 0");
     }
 
     src->Initialize();
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     params.threshold = threshold;
     src->SetParameters(&params);
 
-    pipe->ConnectDevices(src,sink);
+    pipe->ConnectDevices(src, sink);
     src->SendCommand(VC_CMD_START);
     sink->SendCommand(VC_CMD_START);
 
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 
     src->SendCommand(VC_CMD_STOP);
     sink->SendCommand(VC_CMD_STOP);
-    pipe->DisconnectDevices(src,sink);
+    pipe->DisconnectDevices(src, sink);
 
     delete src;
     delete sink;

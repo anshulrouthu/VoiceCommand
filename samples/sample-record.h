@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * sample-record.h
@@ -33,35 +33,35 @@ voiceCommand
 
 struct Riff
 {
-  char chunkId[4]; // "RIFF" (assuming char is 8 bits)
-  int chunkSize; // (assuming int is 32 bits)
-  char format[4]; // "WAVE"
+    char chunkId[4]; // "RIFF" (assuming char is 8 bits)
+    int chunkSize; // (assuming int is 32 bits)
+    char format[4]; // "WAVE"
 };
 
 struct Format
 {
-  char chunkId[4]; // "fmt "
-  int chunkSize;
-  short format; // assuming short is 16 bits
-  short numChannels;
-  int sampleRate;
-  int byteRate;
-  short align;
-  short bitsPerSample;
+    char chunkId[4]; // "fmt "
+    int chunkSize;
+    short format; // assuming short is 16 bits
+    short numChannels;
+    int sampleRate;
+    int byteRate;
+    short align;
+    short bitsPerSample;
 };
 
 struct Data
 {
-  char chunkId[4]; // "data"
-  int chunkSize; // length of data
-  char* data;
+    char chunkId[4]; // "data"
+    int chunkSize; // length of data
+    char* data;
 };
 
 struct Wave // Actual structure of a PCM WAVE file
 {
-  Riff riffHeader;
-  Format formatHeader;
-  Data dataHeader;
+    Riff riffHeader;
+    Format formatHeader;
+    Data dataHeader;
 };
 
 #endif /* SAMPLE_RECORD_H_ */

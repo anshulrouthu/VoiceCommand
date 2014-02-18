@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * buffer.h
@@ -38,7 +38,7 @@ public:
     VC_STATUS SetTag(BUF_TAG tag);
 
 private:
-    const char*  c_str()
+    const char* c_str()
     {
         return ("Buffer");
     }
@@ -48,6 +48,5 @@ private:
     BUF_TAG m_tag;
 
 };
-
 
 #endif /* BUFFER_H_ */

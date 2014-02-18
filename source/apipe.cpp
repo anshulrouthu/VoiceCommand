@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 #include "apipe.h"
 #include "capturedevice.h"
@@ -48,11 +48,11 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name, const char* f
         return (new AudioProcessor(name));
         break;
     case VC_FLAC_DEVICE:
-    	return (new FLACDevice(name));
-    	break;
+        return (new FLACDevice(name));
+        break;
     case VC_CURL_DEVICE:
-    	return (new CURLDevice(name));
-    	break;
+        return (new CURLDevice(name));
+        break;
     case VC_TEXT_PROCESSOR:
         break;
     case VC_COMMAND_PROCESSOR:
@@ -61,8 +61,8 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name, const char* f
         return (new FileSink(name, filename));
         break;
     case VC_FILESRC_DEVICE:
-    	return (new FileSrc(name, filename));
-    	break;
+        return (new FileSrc(name, filename));
+        break;
     default:
         break;
     }
@@ -264,5 +264,5 @@ Buffer* OutputPort::GetBuffer()
  */
 VC_STATUS OutputPort::ReturnBuffer(Buffer* buf)
 {
-	return (m_receiver->RecycleBuffer(buf));
+    return (m_receiver->RecycleBuffer(buf));
 }

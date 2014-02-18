@@ -1,14 +1,14 @@
 /***********************************************************
-voiceCommand 
+ voiceCommand
 
-  Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
+ Copyright (c) 2014 Anshul Routhu <anshul.m67@gmail.com>
 
-  All rights reserved.
+ All rights reserved.
 
-  This software is distributed on an "AS IS" BASIS, 
-  WITHOUT  WARRANTIES OR CONDITIONS OF ANY KIND, either 
-  express or implied.
-***********************************************************/
+ This software is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ express or implied.
+ ***********************************************************/
 
 /*
  * utils.cpp
@@ -24,10 +24,11 @@ static int g_dbglevel __attribute__ ((unused));
 void DebugSetLevel(int level)
 {
     g_dbglevel = level;
-    DBG_PRINT(DBG_ALWAYS,"Debug Level %d",g_dbglevel);
+    DBG_PRINT(DBG_ALWAYS, "Debug Level %d", g_dbglevel);
 }
 
-int kbhit(void) {
+int kbhit(void)
+{
     struct timeval tv;
     fd_set rdfs;
 
@@ -47,16 +48,17 @@ int getch(void)
 {
     struct termios oldattr, newattr;
     int ch;
-    tcgetattr( STDIN_FILENO, &oldattr );
+    tcgetattr(STDIN_FILENO, &oldattr);
     newattr = oldattr;
-    newattr.c_lflag &= ~( ICANON | ECHO );
-    tcsetattr( STDIN_FILENO, TCSANOW, &newattr );
+    newattr.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
     ch = getchar();
-    tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
     return ch;
 }
 
-vcDebug::vcDebug(int level):m_level(level)
+vcDebug::vcDebug(int level) :
+    m_level(level)
 {
 }
 
