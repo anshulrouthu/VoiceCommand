@@ -30,43 +30,6 @@
 #include<sys/time.h>
 #include "utils.h"
 
-#define WAIT_FOREVER -1
-static int const NSEC_PER_SEC = 1000000000;
-
-class ConditionVariable;
-
-/**
- *  A wrapper object for pthread mutex. that allows easy locking and unlocking
- */
-class Mutex
-{
-    friend class ConditionVariable;
-public:
-    Mutex();
-    ~Mutex();
-    int Lock();
-    int Unlock();
-    int TryLock();
-private:
-    pthread_mutex_t m_mutex;
-
-};
-
-/**
- * A wrapper object for pthread condition variables. that allows easy wait and signal event
- */
-class ConditionVariable
-{
-public:
-    ConditionVariable(Mutex& mutex);
-    ~ConditionVariable();
-    int Notify();
-    int Wait(int millisconds = WAIT_FOREVER);
-private:
-    pthread_cond_t m_condition;
-    Mutex& m_mutex;
-};
-
 /**
  * An interface for all the threads in the application.
  */
@@ -90,48 +53,6 @@ private:
 protected:
     bool m_state;
 
-};
-
-/**
- * Class provides automatic mechanism to lock the mutex in constructor and
- * unlock the mutex in destructor, when object is out of scope
- * @param mutex
- */
-class AutoMutex
-{
-public:
-    AutoMutex(Mutex* mutex);
-    ~AutoMutex();
-    const char* c_str()
-    {
-        return ("AutoMutex");
-    }
-private:
-    VC_STATUS Lock();
-    VC_STATUS Unlock();
-    Mutex* m_mutex;
-    bool m_locked;
-};
-
-/**
- * Class provides automatic mechanism to unlock the mutex in constructor and
- * lock the mutex in destructor, when object is out of scope
- * @param mutex
- */
-class AutoMutexRelease
-{
-public:
-    AutoMutexRelease(Mutex* mutex);
-    ~AutoMutexRelease();
-    const char* c_str()
-    {
-        return ("AutoMutexRelease");
-    }
-private:
-    VC_STATUS Lock();
-    VC_STATUS Unlock();
-    Mutex* m_mutex;
-    bool m_locked;
 };
 
 #endif /* WORKER_THREAD_H_ */

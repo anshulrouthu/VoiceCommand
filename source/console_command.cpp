@@ -59,9 +59,10 @@ int main(int argc, char* argv[])
 
     APipe* pipe = new APipe("Pipe 0");
     src = pipe->GetDevice(VC_CAPTURE_DEVICE, "CaptureDevice 0");
+
     if (filecapture)
     {
-        sink = pipe->GetDevice(VC_FILESINK_DEVICE, "FileCapture");
+        sink = pipe->GetDevice(VC_FILESINK_DEVICE, "FileCapture", "FileSink.out");
     }
     else
     {

@@ -15,21 +15,27 @@
 
 AudioProcessor::AudioProcessor(std::string name) :
     m_cv(m_mutex),
-    m_name(name)
+    m_name(name),
+    m_flac(NULL),
+    m_curl(NULL),
+    m_input(NULL),
+    m_output(NULL)
 {
 }
 
 AudioProcessor::~AudioProcessor()
 {
-    m_mutex.Lock();
-    m_cv.Notify();
-    m_mutex.Unlock();
+    /* this mutex is required by the main thread waiting on a condition
+     take the mutex wake up main thread and release the mutex */
+    {
+        AutoMutex automutex(&m_mutex);
+        m_cv.Notify();
+    }
 
     Join();
 
     delete m_flac;
     delete m_curl;
-
     delete m_input;
     delete m_output;
 
@@ -40,9 +46,11 @@ AudioProcessor::~AudioProcessor()
  */
 VC_STATUS AudioProcessor::Initialize()
 {
-    m_flac = new FLACDevice((char*) VC_AUDIO_FILENAME);
+    m_flac = new FLACDevice("FlacDevice");
     m_flac->Initialize();
     m_curl = new CURLDevice("CurlDevice");
+    //TODO: Initialize should be used with new curl device
+    //m_curl->Initialize();
     m_input = new InputPort("Inputport 0", this);
     m_output = new OutputPort("Ouputport 0", this);
 
@@ -72,7 +80,6 @@ OutputPort* AudioProcessor::Output(int portno)
  */
 VC_STATUS AudioProcessor::Notify(VC_EVENT* evt)
 {
-    //TODO: update the api to notify different type of events, as needed
     AutoMutex automutex(&m_mutex);
     m_cv.Notify();
 

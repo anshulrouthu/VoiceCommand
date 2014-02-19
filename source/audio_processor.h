@@ -21,6 +21,7 @@
 #include "worker.h"
 #include "apipe.h"
 #include "curldevice.h"
+#include "mutex.h"
 
 class AudioProcessor: public WorkerThread, public ADevice
 {
@@ -46,13 +47,13 @@ public:
 private:
 
     virtual void Task();
-    FLACDevice* m_flac;
-    CURLDevice* m_curl;
     Json::Reader m_reader;
     char m_text[4 * 1024];
     Mutex m_mutex;
     ConditionVariable m_cv;
     std::string m_name;
+    FLACDevice* m_flac;
+    CURLDevice* m_curl;
     InputPort* m_input;
     OutputPort* m_output;
 };

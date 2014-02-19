@@ -1,5 +1,5 @@
 
-CFLAGS=-Wall
+CFLAGS=-Wall -g
 TARGET=voiceCommand
 SRC=./source
 SAMPLES=./samples/*.cpp
@@ -24,7 +24,7 @@ OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp))
 ############ ----- build main application ----- ##############
 
 .PHONY: all
-all: bin $(OBJS) $(TARGET) sample
+all: bin $(OBJS) $(TARGET) sample tests
 	@cp $(SRC)/scripts/* $(BIN)/
 	@echo "Build successful"
 

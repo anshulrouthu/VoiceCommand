@@ -31,6 +31,7 @@
 #include "buffer.h"
 #include "apipe.h"
 #include "timer.h"
+#include "mutex.h"
 
 #define SAMPLE_RATE 16000
 
@@ -72,11 +73,11 @@ private:
     ALCdevice* m_playbackdev;
     ALCdevice* m_capturedev;
     bool m_running;
-    Timer* m_timer;
-    int m_threshold;
-    Mutex m_mutex;
     ConditionVariable m_cv;
+    int m_threshold;
     std::string m_name;
+    Timer* m_timer;
+    Mutex m_mutex;
     InputPort* m_input;
     OutputPort* m_output;
 

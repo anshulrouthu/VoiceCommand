@@ -28,9 +28,12 @@
  */
 CaptureDevice::CaptureDevice(std::string name) :
     m_running(false),
-    m_threshold(2000),
     m_cv(m_mutex),
-    m_name(name)
+    m_threshold(2000),
+    m_name(name),
+    m_timer(NULL),
+    m_input(NULL),
+    m_output(NULL)
 {
 }
 
@@ -39,7 +42,16 @@ CaptureDevice::CaptureDevice(std::string name) :
  */
 CaptureDevice::~CaptureDevice()
 {
-    alcMakeContextCurrent (NULL);
+    /* this mutex is required by the main thread waiting on a condition
+     take the mutex wake up main thread and release the mutex */
+    {
+        AutoMutex automutex(&m_mutex);
+        m_cv.Notify();
+    }
+
+    Join();
+
+    alcMakeContextCurrent(NULL);
     alcCloseDevice(m_playbackdev);
     alcCaptureCloseDevice(m_capturedev);
 
@@ -55,8 +67,8 @@ CaptureDevice::~CaptureDevice()
 VC_STATUS CaptureDevice::Initialize()
 {
     m_timer = new Timer();
-    m_input = new InputPort("Inputport 0", this);
-    m_output = new OutputPort("Ouputport 0", this);
+    m_input = new InputPort("AudCap Input 0", this);
+    m_output = new OutputPort("AudCap Ouput 0", this);
 
     OpenCaptureDevice();
 
@@ -87,9 +99,8 @@ OutputPort* CaptureDevice::Output(int portno)
 VC_STATUS CaptureDevice::Notify(VC_EVENT* evt)
 {
     //TODO: update the api to notify different type of events
-    m_mutex.Lock();
+    AutoMutex automutex(&m_mutex);
     m_cv.Notify();
-    m_mutex.Unlock();
 
     return (VC_SUCCESS);
 }
@@ -103,13 +114,13 @@ VC_STATUS CaptureDevice::SendCommand(VC_CMD cmd)
     {
     case VC_CMD_START:
         Start();
-        usleep(10000);
+        //usleep(10000);
         m_running = true;
         break;
     case VC_CMD_STOP:
         m_running = false;
-        Stop();
         alcCaptureStop(m_capturedev);
+        Stop();
         break;
     }
     return (VC_SUCCESS);

@@ -52,7 +52,7 @@ VC_STATUS FileSink::WriteData()
         Buffer* buf = m_input->GetFilledBuffer();
         if (buf->GetTag() == TAG_NONE)
         {
-            fwrite(buf->GetData(), sizeof(char), buf->GetSize(), m_file);
+            fwrite(buf->GetData(), buf->GetSize(), 1, m_file);
         }
         m_input->RecycleBuffer(buf);
     }

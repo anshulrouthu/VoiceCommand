@@ -32,14 +32,17 @@ CURLDevice::CURLDevice(std::string name, const char* filename) :
     VC_CHECK(m_curl == NULL,, "Error Initializing Curl");
     m_header = curl_slist_append(m_header, "Content-type: audio/x-flac; rate=16000");
 
-    m_buffer = (char*) malloc(400 * sizeof(char));
+    m_buffer = (char*) malloc(400);
 }
 
 CURLDevice::~CURLDevice()
 {
-    m_mutex.Lock();
-    m_cv.Notify();
-    m_mutex.Unlock();
+    /* this mutex is required by the main thread waiting on a condition
+     take the mutex wake up main thread and release the mutex */
+    {
+        AutoMutex automutex(&m_mutex);
+        m_cv.Notify();
+    }
 
     Join();
 
@@ -77,9 +80,9 @@ VC_STATUS CURLDevice::Initialize()
 
 VC_STATUS CURLDevice::Notify(VC_EVENT* evt)
 {
-    m_mutex.Lock();
+    AutoMutex automutex(&m_mutex);
     m_cv.Notify();
-    m_mutex.Unlock();
+
     return (VC_SUCCESS);
 }
 
@@ -121,9 +124,8 @@ void CURLDevice::Task()
         }
         else
         {
-            m_mutex.Lock();
+            AutoMutex automutex(&m_mutex);
             m_cv.Wait();
-            m_mutex.Unlock();
         }
     }
 }
@@ -157,18 +159,21 @@ size_t CURLDevice::WriteData(void* buffer, size_t size, size_t n, void* ptr)
 
 size_t CURLDevice::Write_callback(void* buffer, size_t size, size_t n, void* ptr)
 {
+    VC_TRACE_STATIC("Enter");
+
     CURLDevice* self = static_cast<CURLDevice*>(ptr);
     Buffer* buf = self->Output(0)->GetBuffer();
     buf->WriteData(buffer, size * n);
     self->Output(0)->PushBuffer(buf);
-    DBGPRINT(DBG_ALWAYS, ("Received Json Text %s",(char*)buffer));
+
+    VC_ALL_STATIC("Received Json Text %s", (char* )buffer);
 
     return (size * n);
 }
 
 size_t CURLDevice::read_callback(void *buffer, size_t size, size_t n, void *ptr)
 {
-    //VC_CHECK(size * n < 1,return (0),"");
+    VC_CHECK_STATIC(size * n < 1, return (0), "Error");
 
     CURLDevice* self = static_cast<CURLDevice*>(ptr);
 
@@ -176,9 +181,8 @@ size_t CURLDevice::read_callback(void *buffer, size_t size, size_t n, void *ptr)
     {
         while (!self->Input(0)->IsBufferAvailable())
         {
-            self->m_mutex.Lock();
+            AutoMutex automutex(&self->m_mutex);
             self->m_cv.Wait();
-            self->m_mutex.Unlock();
         }
     }
 
@@ -186,7 +190,7 @@ size_t CURLDevice::read_callback(void *buffer, size_t size, size_t n, void *ptr)
 
     if (buf->GetTag() == TAG_END || buf->GetTag() == TAG_BREAK)
     {
-        DBGPRINT(DBG_ALWAYS, ("Received TAG_EOF\n"));
+        DBGPRINT(DBG_ALWAYS, ("Received TAG_EOS\n"));
         return (0);
     }
 

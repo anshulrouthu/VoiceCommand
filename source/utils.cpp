@@ -17,7 +17,6 @@
  *      Author: anshul
  */
 #include "utils.h"
-#include <stdarg.h>
 
 static int g_dbglevel __attribute__ ((unused));
 

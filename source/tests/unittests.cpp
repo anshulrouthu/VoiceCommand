@@ -121,13 +121,13 @@ TEST(ADeviceConnections)
 TEST(InputOutputPorts)
 {
     DBGPRINT(DBG_ALWAYS, ("Testing InputOutputPorts\n"));
-    APipe* pipe = new APipe("Pipe 0");
-    InputPort* input = new InputPort("Input 0", NULL);
-    OutputPort* output = new OutputPort("Output 0", NULL);
+    APipe* pipe = new APipe("InputOutput Pipe 0");
+    InputPort* input = new InputPort("InputOutput Input 0", NULL);
+    OutputPort* output = new OutputPort("InputOutput Output 0", NULL);
 
-    CHECK_EQUAL(pipe->c_str(), "Pipe 0");
-    CHECK_EQUAL(input->c_str(), "Input 0");
-    CHECK_EQUAL(output->c_str(), "Output 0");
+    CHECK_EQUAL(pipe->c_str(), "InputOutput Pipe 0");
+    CHECK_EQUAL(input->c_str(), "InputOutput Input 0");
+    CHECK_EQUAL(output->c_str(), "InputOutput Output 0");
 
     CHECK_EQUAL(!!output->GetBuffer(), !!NULL);
     CHECK_EQUAL(pipe->ConnectPorts(input, output), VC_SUCCESS);
@@ -137,7 +137,7 @@ TEST(InputOutputPorts)
     CHECK_EQUAL(output->PushBuffer(buf), VC_SUCCESS);
     Buffer* buf2 = input->GetFilledBuffer();
     CHECK(!!buf2);
-    CHECK_EQUAL((char* )buf2->GetData(), "VoiceCommand");
+    CHECK(!memcmp(buf2->GetData(), "VoiceCommand", 12));
     CHECK_EQUAL(input->RecycleBuffer(buf2), VC_SUCCESS);
     CHECK_EQUAL(pipe->DisconnectPorts(input, output), VC_SUCCESS);
 
@@ -149,39 +149,49 @@ TEST(InputOutputPorts)
 TEST(FileIOTEST)
 {
     DBGPRINT(DBG_ALWAYS, ("Testing FileIOTEST\n"));
-    APipe* pipe = new APipe("Pipe 0");
-    FileSink* dst = new FileSink("FileSink", "FileSink.out");
-    FileSrc* src = new FileSrc("FileSrc", "FileSink.out");
-    OutputPort* output = new OutputPort("Output 0", NULL);
-    InputPort* input = new InputPort("Input 0", NULL);
+    APipe* pipe = new APipe("FileIO Pipe 0");
+    FileSink* fsink = new FileSink("FileIO FileSink", "FileSink.out");
+    FileSrc* fsrc = new FileSrc("FileIO FileSrc", "FileSink.out");
+    OutputPort* output = new OutputPort("FileIO Output 0", NULL);
+    InputPort* input = new InputPort("FileIO Input 0", NULL);
+    Buffer* buf;
 
-    dst->Initialize();
-    src->Initialize();
+    fsink->Initialize();
+    fsrc->Initialize();
 
-    CHECK_EQUAL(pipe->c_str(), "Pipe 0");
-    CHECK_EQUAL(dst->c_str(), "FileSink");
-    CHECK_EQUAL(src->c_str(), "FileSrc");
-    CHECK_EQUAL(output->c_str(), "Output 0");
-    CHECK_EQUAL(input->c_str(), "Input 0");
+    CHECK_EQUAL(pipe->c_str(), "FileIO Pipe 0");
+    CHECK_EQUAL(fsink->c_str(), "FileIO FileSink");
+    CHECK_EQUAL(fsrc->c_str(), "FileIO FileSrc");
+    CHECK_EQUAL(output->c_str(), "FileIO Output 0");
+    CHECK_EQUAL(input->c_str(), "FileIO Input 0");
 
-    CHECK_EQUAL(pipe->ConnectPorts(dst->Input(0), output), VC_SUCCESS);
-    CHECK_EQUAL(pipe->ConnectPorts(input, src->Output(0)), VC_SUCCESS);
+    CHECK_EQUAL(pipe->ConnectPorts(fsink->Input(0), output), VC_SUCCESS);
+    CHECK_EQUAL(pipe->ConnectPorts(input, fsrc->Output(0)), VC_SUCCESS);
 
-    CHECK_EQUAL(dst->SendCommand(VC_CMD_START), VC_SUCCESS);
-
-    Buffer* buf = output->GetBuffer();
+    CHECK_EQUAL(fsink->SendCommand(VC_CMD_START), VC_SUCCESS);
+    usleep(100000); //wait for thread to start
+    buf = output->GetBuffer();
+    CHECK(!!buf);
+    CHECK_EQUAL(buf->SetTag(TAG_START), VC_SUCCESS);
+    CHECK_EQUAL(output->PushBuffer(buf), VC_SUCCESS);
+    buf = output->GetBuffer();
     CHECK(!!buf);
     CHECK_EQUAL(buf->WriteData((void* )"VoiceCommand", 12), VC_SUCCESS);
     CHECK_EQUAL(output->PushBuffer(buf), VC_SUCCESS);
-    CHECK_EQUAL(pipe->DisconnectPorts(dst->Input(0), output), VC_SUCCESS);
-    delete dst;
+    buf = output->GetBuffer();
+    CHECK(!!buf);
+    CHECK_EQUAL(buf->SetTag(TAG_END), VC_SUCCESS);
+    CHECK_EQUAL(output->PushBuffer(buf), VC_SUCCESS);
+    CHECK_EQUAL(fsink->SendCommand(VC_CMD_STOP), VC_SUCCESS);
+    CHECK_EQUAL(pipe->DisconnectPorts(fsink->Input(0), output), VC_SUCCESS);
+    delete fsink;
 
-    CHECK_EQUAL(src->SendCommand(VC_CMD_START), VC_SUCCESS);
+    CHECK_EQUAL(fsrc->SendCommand(VC_CMD_START), VC_SUCCESS);
+    usleep(10000); //wait for thread to start
 
     //wait untill a buffer is pushed but source device
     while (!input->IsBufferAvailable())
         ;
-
     CHECK(input->IsBufferAvailable());
 
     buf = input->GetFilledBuffer();
@@ -198,17 +208,17 @@ TEST(FileIOTEST)
 
     buf = input->GetFilledBuffer();
     CHECK(!!buf);
-    CHECK_EQUAL((char* )buf->GetData(), "VoiceCommand");
+    CHECK(!memcmp(buf->GetData(), "VoiceCommand", 12));
 
-    CHECK_EQUAL(src->SendCommand(VC_CMD_STOP), VC_SUCCESS);
-    CHECK_EQUAL(pipe->DisconnectPorts(input, src->Output(0)), VC_SUCCESS);
-    delete src;
+    CHECK_EQUAL(fsrc->SendCommand(VC_CMD_STOP), VC_SUCCESS);
+    CHECK_EQUAL(pipe->DisconnectPorts(input, fsrc->Output(0)), VC_SUCCESS);
+    delete fsrc;
 
     FILE* fp;
     char c[12];
     fp = fopen("FileSink.out", "rb");
-    fread(c, sizeof(char), 12, fp);
-    CHECK_EQUAL(c, "VoiceCommand");
+    fread(c, 1, 12, fp);
+    CHECK(!memcmp(c, "VoiceCommand", 12));
 
     fclose(fp);
     delete pipe;

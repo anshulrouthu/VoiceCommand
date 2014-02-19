@@ -115,7 +115,7 @@ int main(void)
     for (i = 2; i > 0; i--)
     {
         printf("Starting capture in %d...\r", i);
-        fflush (stdout);
+        fflush(stdout);
         lastTime = time(NULL);
         currentTime = lastTime;
         while (currentTime == lastTime)
@@ -126,7 +126,7 @@ int main(void)
     }
 
     printf("Starting capture NOW!\n");
-    fflush (stdout);
+    fflush(stdout);
     lastTime = currentTime;
 
 // Capture (roughly) five seconds of audio
@@ -246,7 +246,7 @@ int main(void)
     if (ok)
     {
         init_status = FLAC__stream_encoder_init_file(encoder, "audiotest.flac", progress_callback, /*client_data=*/
-            NULL);
+        NULL);
         if (init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK)
         {
             fprintf(stderr, "ERROR: initializing encoder: %s\n", FLAC__StreamEncoderInitStatusString[init_status]);
@@ -307,7 +307,7 @@ int main(void)
 // Shut down OpenAL
     alDeleteSources(1, &source);
     alDeleteBuffers(1, &buf);
-    alcMakeContextCurrent (NULL);
+    alcMakeContextCurrent(NULL);
     alcCloseDevice(mainDev);
     alcCaptureCloseDevice(captureDev);
 }

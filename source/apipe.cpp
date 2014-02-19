@@ -78,7 +78,7 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name, const char* f
 VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst)
 {
     VC_TRACE("Enter");
-    VC_CHECK(!src || !dst, return VC_FAILURE, "Error null parameters");
+    VC_CHECK(!src || !dst, return (VC_FAILURE), "Error: Null parameters");
     return (ConnectPorts(dst->Input(0), src->Output(0)));
 }
 
@@ -90,7 +90,7 @@ VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst)
 VC_STATUS APipe::DisconnectDevices(ADevice* src, ADevice* dst)
 {
     VC_TRACE("Enter");
-    VC_CHECK(!src || !dst, return VC_FAILURE, "Error null parameters");
+    VC_CHECK(!src || !dst, return (VC_FAILURE), "Error: Null parameters");
     return (DisconnectPorts(dst->Input(0), src->Output(0)));
 }
 
@@ -102,7 +102,7 @@ VC_STATUS APipe::DisconnectDevices(ADevice* src, ADevice* dst)
 VC_STATUS APipe::ConnectPorts(InputPort* input, OutputPort* output)
 {
     VC_TRACE("Enter");
-    VC_CHECK(!input || !output, return VC_FAILURE, "Error null parameters");
+    VC_CHECK(!input || !output, return (VC_FAILURE), "Error: Null parameters");
     return (output->SetReceiver(input));
 }
 
@@ -114,7 +114,8 @@ VC_STATUS APipe::ConnectPorts(InputPort* input, OutputPort* output)
 VC_STATUS APipe::DisconnectPorts(InputPort* input, OutputPort* output)
 {
     VC_TRACE("Enter");
-    VC_CHECK(!input || !output, return VC_FAILURE, "Error null parameters");
+    VC_CHECK(!input || !output, return (VC_FAILURE), "Error: Null parameters");
+    VC_CHECK(output->m_receiver != input, return (VC_FAILURE), "Error: Invalid ports");
     return (output->SetReceiver(NULL));
 }
 
@@ -134,6 +135,15 @@ InputPort::InputPort(std::string name, ADevice* device) :
     }
 }
 
+InputPort::~InputPort()
+{
+    for (std::list<Buffer*>::iterator it = m_buffers.begin(); it != m_buffers.end(); it++)
+    {
+        delete *it;
+    }
+
+    m_buffers.clear();
+}
 /**
  * Returns the filled buffer from the received buffer queue
  * @return buf to be processed by device
@@ -141,6 +151,8 @@ InputPort::InputPort(std::string name, ADevice* device) :
 Buffer* InputPort::GetFilledBuffer()
 {
     VC_TRACE("Enter");
+
+    AutoMutex automutex(&m_queue_mutex);
     VC_CHECK(m_processbuf.size() == 0, return (NULL), "No buffers available to be processed");
 
     Buffer* buf = m_processbuf.front();
@@ -156,8 +168,10 @@ Buffer* InputPort::GetFilledBuffer()
 Buffer* InputPort::GetEmptyBuffer()
 {
     VC_TRACE("Enter");
+
     while (m_buffers.size() == 0)
     {
+        //this should not happen or we starve for buffer
         VC_ERR("Low on Buffers");
     }
 
@@ -186,8 +200,16 @@ VC_STATUS InputPort::RecycleBuffer(Buffer* buf)
 VC_STATUS InputPort::ReceiveBuffer(Buffer* buf)
 {
     VC_TRACE("Enter");
-    m_processbuf.push_back(buf);
+    {
+        AutoMutex automutex(&m_queue_mutex);
+        m_processbuf.push_back(buf);
+    }
 
+    /*
+     * This mutex should be released before Notify call, some device
+     * block this call, and access the input buffer e.g filesink device
+     * TODO: Improve this notification mechanism
+     */
     if (m_device)
     {
         m_device->Notify(NULL);
@@ -197,12 +219,13 @@ VC_STATUS InputPort::ReceiveBuffer(Buffer* buf)
 }
 
 /**
- * Checks if a buffer is abailable for processing
+ * Checks if a buffer is available for processing
  * @return true/false
  */
 bool InputPort::IsBufferAvailable()
 {
     VC_TRACE("Enter");
+    AutoMutex automutex(&m_queue_mutex);
     return (m_processbuf.size());
 }
 
@@ -225,7 +248,12 @@ OutputPort::OutputPort(std::string name, ADevice* device) :
 VC_STATUS OutputPort::SetReceiver(InputPort* inport)
 {
     VC_TRACE("Enter");
-    m_receiver = inport;
+    if ((m_receiver && !inport) || (!m_receiver && inport))
+    {
+        m_receiver = inport;
+        return (VC_SUCCESS);
+    }
+    VC_ERR("Error: Cannot connect receiver");
     return (VC_SUCCESS);
 }
 

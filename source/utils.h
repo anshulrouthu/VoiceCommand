@@ -22,16 +22,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <termios.h>
 #include <unistd.h>
 #include <sstream>
-#include <stdarg.h>
 #include <getopt.h>
+#include <stdarg.h>
 #include <string.h>
 #include <list>
+
+#ifndef NULL
+#define NULL   ((void *) 0)
+#endif
 
 #define NO_OF_CHANNELS 1
 
@@ -60,6 +65,23 @@ private:
 #define DBGPRINT(level,msg) vcDebug(level).DebugPrint msg
 
 #define DBG_PRINT(level, format, args...)  DBGPRINT(level, ("%-5d%s() - " format "\n", __LINE__, __FUNCTION__, ##args))
+
+//debug macros for functions that do not implement c_str()
+
+#define VC_DBG_STATIC(level, format, args...)  DBGPRINT(level, ("%-5d%s() - " format "\n", __LINE__, __FUNCTION__, ##args))
+#define VC_ALL_STATIC(format, args...)  VC_DBG_STATIC(DBG_ALWAYS,  format, ##args)
+#define VC_TRACE_STATIC(format, args...)  VC_DBG_STATIC(DBG_TRACE,   format, ##args)
+#define VC_MSG_STATIC(format, args...)  VC_DBG_STATIC(DBG_MESSAGE,   format, ##args)
+#define VC_ERR_STATIC(format, args...)  VC_DBG_STATIC(DBG_ALWAYS,  format, ##args)
+#define VC_CHECK_STATIC(condition, fail, msg, args...)  \
+do                                      \
+{                                       \
+    if (condition)                      \
+    {                                   \
+        VC_ERR_STATIC(msg,##args);             \
+        fail;                           \
+    }                                   \
+} while (0)
 
 //To use the following debug macros, the class should implement c_str() method
 

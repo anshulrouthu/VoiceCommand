@@ -22,6 +22,7 @@
 
 #include "utils.h"
 #include "buffer.h"
+#include "mutex.h"
 
 class InputPort;
 class OutputPort;
@@ -134,6 +135,7 @@ public:
 
     /**
      * Function to notify the device for any events
+     * TODO: update the api to notify different type of events, as needed
      */
     virtual VC_STATUS Notify(VC_EVENT* evt)
     {
@@ -188,11 +190,11 @@ public:
  */
 class InputPort
 {
+
 public:
     InputPort(std::string name, ADevice* device);
-    ~InputPort()
-    {
-    }
+    ~InputPort();
+
     Buffer* GetFilledBuffer();
     Buffer* GetEmptyBuffer();
     bool IsBufferAvailable();
@@ -207,6 +209,7 @@ private:
     std::list<Buffer*> m_processbuf;
     std::string m_name;
     ADevice* m_device;
+    Mutex m_queue_mutex;
 
 };
 
@@ -215,6 +218,7 @@ private:
  */
 class OutputPort
 {
+    friend class APipe;
 public:
     OutputPort(std::string name, ADevice* device);
     ~OutputPort()

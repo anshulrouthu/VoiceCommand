@@ -21,7 +21,8 @@
 
 Buffer::Buffer(size_t size) :
     m_size(0),
-    m_tag(TAG_NONE)
+    m_tag(TAG_NONE),
+    m_samples(0)
 {
     m_data = malloc(size);
     VC_CHECK(m_data == NULL,, "Error allocating buffer");
@@ -51,6 +52,11 @@ VC_STATUS Buffer::WriteData(void* buf, size_t size)
 size_t Buffer::GetSize()
 {
     return (m_size);
+}
+
+size_t Buffer::GetMaxSize()
+{
+    return (VC_BUFFER_MAXSIZE);
 }
 
 int Buffer::GetSamples()
