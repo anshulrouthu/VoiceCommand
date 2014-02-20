@@ -43,7 +43,7 @@ VC_STATUS WorkerThread::Start()
 {
     m_state = true;
     int t = pthread_create(&m_handle, NULL, &WorkerThread::taskLauncher, (void*) this);
-    VC_CHECK(t != 0, return (VC_FAILURE), "Failed to create thread (error: %d)", t);
+    VC_CHECK_STATIC(t != 0, return (VC_FAILURE), "Failed to create thread (error: %d)", t);
 
     return (VC_SUCCESS);
 

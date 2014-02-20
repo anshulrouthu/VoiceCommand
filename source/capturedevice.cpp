@@ -27,10 +27,9 @@
  * @param thr threshold input level
  */
 CaptureDevice::CaptureDevice(std::string name) :
+    ADevice(name),
     m_running(false),
-    m_cv(m_mutex),
     m_threshold(2000),
-    m_name(name),
     m_timer(NULL),
     m_input(NULL),
     m_output(NULL)

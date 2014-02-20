@@ -19,7 +19,7 @@
 #include "file_io.h"
 
 FileSink::FileSink(std::string name, const char* filename) :
-    m_name(name),
+    ADevice(name),
     m_filename(filename)
 {
 }
@@ -97,7 +97,7 @@ VC_STATUS FileSink::SendCommand(VC_CMD cmd)
 }
 
 FileSrc::FileSrc(std::string name, const char* in_file) :
-    m_name(name),
+    ADevice(name),
     m_filename(in_file)
 {
 }

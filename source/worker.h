@@ -42,10 +42,7 @@ public:
     int Join();
     void Stop();
 private:
-    const char* c_str()
-    {
-        return ("WorkerThread");
-    }
+
     virtual void Task()=0;
     static void* taskLauncher(void* args);
     pthread_t m_handle;

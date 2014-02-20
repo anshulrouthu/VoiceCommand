@@ -18,12 +18,12 @@
  */
 #include "utils.h"
 
-static int g_dbglevel __attribute__ ((unused));
+static int g_dbglevel __attribute__ ((unused)) = 2;
 
 void DebugSetLevel(int level)
 {
     g_dbglevel = level;
-    DBG_PRINT(DBG_ALWAYS, "Debug Level %d", g_dbglevel);
+    DBG_PRINT(DBG_MESSAGE, "Debug Level %d", g_dbglevel);
 }
 
 int kbhit(void)

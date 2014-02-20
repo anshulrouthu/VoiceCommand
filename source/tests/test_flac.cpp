@@ -27,9 +27,11 @@ int main(int args, char* argv[])
     ADevice* flac = pipe->GetDevice(VC_FLAC_DEVICE, "FlacTest");
     ADevice* cap = pipe->GetDevice(VC_CAPTURE_DEVICE, "AudioCapture");
     ADevice* sink = pipe->GetDevice(VC_FILESINK_DEVICE, "FileSink", "FileSink.out");
+
     flac->Initialize();
     cap->Initialize();
     sink->Initialize();
+
     pipe->ConnectDevices(cap, flac);
     pipe->ConnectDevices(flac, sink);
 

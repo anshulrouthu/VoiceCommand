@@ -36,16 +36,11 @@ public:
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
 
-    const char* c_str()
-    {
-        return (m_name.c_str());
-    }
 private:
     VC_STATUS WriteData();
     FILE* m_file;
     InputPort* m_input;
     OutputPort* m_output;
-    std::string m_name;
     const char* m_filename;
 
 };
@@ -60,16 +55,11 @@ public:
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
 
-    const char* c_str()
-    {
-        return (m_name.c_str());
-    }
 private:
     virtual void Task();
     VC_STATUS ReadData();
     FILE* m_file;
     OutputPort* m_output;
-    std::string m_name;
     const char* m_filename;
 
 };

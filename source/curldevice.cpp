@@ -20,11 +20,10 @@
 #include "curldevice.h"
 
 CURLDevice::CURLDevice(std::string name, const char* filename) :
+    ADevice(name),
     m_header(NULL),
     m_formpost(NULL),
-    m_name(name),
-    m_filename(filename),
-    m_cv(m_mutex)
+    m_filename(filename)
 {
     curl_global_init(CURL_GLOBAL_ALL);
     m_curl = curl_easy_init();
@@ -73,7 +72,7 @@ VC_STATUS CURLDevice::Initialize()
     curl_easy_setopt(m_curl, CURLOPT_READDATA, this);
     curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, CURLDevice::Write_callback);
     curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 0L);
 
     return (VC_SUCCESS);
 }
@@ -121,11 +120,15 @@ void CURLDevice::Task()
             {
                 VC_CHECK(curl_easy_perform(m_curl) != CURLE_OK,, "Error requesting command");
             }
+            m_input->RecycleBuffer(buf);
         }
         else
         {
             AutoMutex automutex(&m_mutex);
-            m_cv.Wait();
+            while (!m_input->IsBufferAvailable() && m_state)
+            {
+                m_cv.Wait();
+            }
         }
     }
 }
@@ -163,10 +166,13 @@ size_t CURLDevice::Write_callback(void* buffer, size_t size, size_t n, void* ptr
 
     CURLDevice* self = static_cast<CURLDevice*>(ptr);
     Buffer* buf = self->Output(0)->GetBuffer();
-    buf->WriteData(buffer, size * n);
-    self->Output(0)->PushBuffer(buf);
+    if (buf)
+    {
+        buf->WriteData(buffer, size * n);
+        self->Output(0)->PushBuffer(buf);
+    }
 
-    VC_ALL_STATIC("Received Json Text %s", (char* )buffer);
+    VC_MSG_STATIC("Received Json Text %s", (char* )buffer);
 
     return (size * n);
 }
@@ -175,28 +181,32 @@ size_t CURLDevice::read_callback(void *buffer, size_t size, size_t n, void *ptr)
 {
     VC_CHECK_STATIC(size * n < 1, return (0), "Error");
 
+    size = 0;
     CURLDevice* self = static_cast<CURLDevice*>(ptr);
 
     if (!self->Input(0)->IsBufferAvailable())
     {
-        while (!self->Input(0)->IsBufferAvailable())
+        AutoMutex automutex(&self->m_mutex);
+        while (!self->Input(0)->IsBufferAvailable() && self->m_state)
         {
-            AutoMutex automutex(&self->m_mutex);
             self->m_cv.Wait();
         }
     }
 
     Buffer* buf = self->Input(0)->GetFilledBuffer();
 
-    if (buf->GetTag() == TAG_END || buf->GetTag() == TAG_BREAK)
+    if (buf)
     {
-        DBGPRINT(DBG_ALWAYS, ("Received TAG_EOS\n"));
-        return (0);
-    }
+        if (buf->GetTag() == TAG_END || buf->GetTag() == TAG_BREAK)
+        {
+            DBGPRINT(DBG_ALWAYS, ("Received TAG_EOS\n"));
+            return (0);
+        }
 
-    size = buf->GetSize();
-    memcpy(buffer, buf->GetData(), size);
-    self->Input(0)->RecycleBuffer(buf);
+        size = buf->GetSize();
+        memcpy(buffer, buf->GetData(), size);
+        self->Input(0)->RecycleBuffer(buf);
+    }
 
     return (size);
 

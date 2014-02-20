@@ -26,7 +26,7 @@
 class AudioProcessor: public WorkerThread, public ADevice
 {
 public:
-    AudioProcessor(std::string name);
+    AudioProcessor(std::string name, APipe* pipe = NULL);
     virtual ~AudioProcessor();
 
     virtual VC_STATUS Initialize();
@@ -37,25 +37,19 @@ public:
     virtual VC_STATUS SetParameters(const InputParams* params);
     virtual VC_STATUS GetParameters(OutputParams* params);
 
-    VC_STATUS InitiateDataProcessing();
+    bool IsBufferAvailable();
+    std::string JSONToText(Buffer* buf);
     VC_STATUS CloseDataProcessing(char* text);
 
-    const char* c_str()
-    {
-        return (m_name.c_str());
-    }
 private:
 
     virtual void Task();
     Json::Reader m_reader;
     char m_text[4 * 1024];
-    Mutex m_mutex;
-    ConditionVariable m_cv;
-    std::string m_name;
     FLACDevice* m_flac;
     CURLDevice* m_curl;
-    InputPort* m_input;
     OutputPort* m_output;
+    std::map<int,InputPort*> m_input_map;
 };
 
 #endif /*AUDIO_PROCESSOR_H_*/

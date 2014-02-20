@@ -13,12 +13,10 @@
 #include "audio_processor.h"
 #define NUM_OF_BUFFERS 128
 
-AudioProcessor::AudioProcessor(std::string name) :
-    m_cv(m_mutex),
-    m_name(name),
+AudioProcessor::AudioProcessor(std::string name, APipe* pipe) :
+    ADevice(name, pipe),
     m_flac(NULL),
     m_curl(NULL),
-    m_input(NULL),
     m_output(NULL)
 {
 }
@@ -34,10 +32,22 @@ AudioProcessor::~AudioProcessor()
 
     Join();
 
+    m_flac->SendCommand(VC_CMD_STOP);
+    m_curl->SendCommand(VC_CMD_STOP);
+
+    m_pipe->DisconnectDevices(m_flac,m_curl);
+    m_pipe->DisconnectDevices(m_curl,this,0,1);
+
     delete m_flac;
     delete m_curl;
-    delete m_input;
     delete m_output;
+
+    for (std::map<int, InputPort*>::iterator it = m_input_map.begin(); it != m_input_map.end(); it++)
+    {
+        delete (*it).second;
+        (*it).second = NULL;
+    }
+
 
 }
 
@@ -47,12 +57,23 @@ AudioProcessor::~AudioProcessor()
 VC_STATUS AudioProcessor::Initialize()
 {
     m_flac = new FLACDevice("FlacDevice");
-    m_flac->Initialize();
     m_curl = new CURLDevice("CurlDevice");
-    //TODO: Initialize should be used with new curl device
-    //m_curl->Initialize();
-    m_input = new InputPort("Inputport 0", this);
     m_output = new OutputPort("Ouputport 0", this);
+
+    for (int i = 0; i < 2; i++)
+    {
+        InputPort* m_input = new InputPort("Inputport_"+std::string((char*)&i), this);
+        m_input_map[i] = m_input;
+    }
+
+    m_flac->Initialize();
+    m_curl->Initialize();
+
+    m_pipe->ConnectDevices(m_flac,m_curl);
+    m_pipe->ConnectDevices(m_curl,this,0,1);
+
+    m_flac->SendCommand(VC_CMD_START);
+    m_curl->SendCommand(VC_CMD_START);
 
     return (VC_SUCCESS);
 }
@@ -63,7 +84,7 @@ VC_STATUS AudioProcessor::Initialize()
  */
 InputPort* AudioProcessor::Input(int portno)
 {
-    return (m_input);
+    return (m_input_map[portno]);
 }
 
 /**
@@ -121,26 +142,18 @@ VC_STATUS AudioProcessor::GetParameters(OutputParams* params)
     return (VC_SUCCESS);
 }
 
-VC_STATUS AudioProcessor::InitiateDataProcessing()
-{
-    m_flac->InitiateFLACCapture();
-    return (VC_SUCCESS);
-}
-
-VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
+std::string AudioProcessor::JSONToText(Buffer* buf)
 {
     Json::Value root;
     Json::Value hypotheses;
-    const char* utterance;
+    std::string utterance;
     double confidence;
     char *cmd;
 
-    m_flac->CloseFLACCapture();
-    text[0] = '\0';
-    cmd = m_curl->GetText();
+    cmd = (char*)buf->GetData();
     if (cmd)
     {
-        VC_CHECK(!m_reader.parse(cmd, root, true), return (VC_FAILURE), "Error parsing text");
+        VC_CHECK(!m_reader.parse(cmd, root, true), return (""), "Error parsing text");
 
         hypotheses = root["hypotheses"][(unsigned int) (0)];
 
@@ -152,82 +165,88 @@ VC_STATUS AudioProcessor::CloseDataProcessing(char* text)
 
         if (confidence > 0.7 && hypotheses["utterance"].isString())
         {
-            utterance = hypotheses["utterance"].asCString();
-            strcpy(text, utterance);
+            utterance = hypotheses["utterance"].asString();
             cmd[0] = '\0';
-            VC_MSG("\n\tUtterance: %s\n\tConfidence: %f", utterance, confidence);
-            return (VC_SUCCESS);
+            VC_MSG("\n\tUtterance: %s\n\tConfidence: %f", utterance.c_str(), confidence);
+            return (utterance);
         }
     }
 
-    return (VC_SUCCESS);
+    return ("");
 }
 
 void AudioProcessor::Task()
 {
-    VC_ALL("Enter");
-    bool senddata = false;
+    VC_MSG("Enter");
+    bool text_break = false;
+    std::string text = "";
     while (m_state)
     {
-        if (m_input->IsBufferAvailable())
+        for (std::map<int, InputPort*>::iterator it = m_input_map.begin(); it != m_input_map.end(); it++)
         {
-            char text[2048] = "";
-            Buffer* buf = m_input->GetFilledBuffer();
-
-            if (buf->GetTag() == TAG_START)
+            InputPort* input = (*it).second;
+            if (input->IsBufferAvailable())
             {
-                InitiateDataProcessing();
-            }
-            else if (buf->GetTag() == TAG_BREAK && senddata)
-            {
-                VC_MSG("GOT TAG_BREAK");
-                CloseDataProcessing(text);
-
-                strcat(m_text, " ");
-                strcat(m_text, text);
-                VC_ALL("GotText %s\n", m_text);
-                usleep(5000);
-                InitiateDataProcessing();
-
-                senddata = false;
-            }
-            else if (buf->GetTag() == TAG_END)
-            {
-                VC_MSG("GOT TAG_END");
-                CloseDataProcessing(text);
-                strcat(m_text, " ");
-                strcat(m_text, text);
-                VC_ALL("GotText %s\n", m_text);
-
-                if (strcmp(m_text, " "))
+                if ((*it).first == 0)
                 {
-                    char notifycmd[4 * 1000] = "notify-send -t 10 \"Received Text\" \"";
-                    strcat(notifycmd, m_text);
-                    strcat(notifycmd, "\"");
-                    //TODO:improve this GUI notification mechanism
-                    system("pkill notify-osd");
-                    system(notifycmd);
+                    //first input port connected to capture device
+                    Buffer* buf = input->GetFilledBuffer();
+
+                    switch (buf->GetTag())
+                    {
+                    case TAG_START:
+                        m_flac->StartEncoder();
+                        break;
+                    case TAG_BREAK:
+                        text_break = true;
+                        m_flac->StopEncoder();
+                        m_flac->StartEncoder();
+                        break;
+                    case TAG_END:
+                        text_break = false;
+                        m_flac->StopEncoder();
+                        break;
+                    case TAG_NONE:
+                        m_flac->WriteData(buf->GetData(), buf->GetSamples());
+                        break;
+                    default:
+                        break;
+                    }
+                    input->RecycleBuffer(buf);
                 }
-                m_text[0] = '\0';
-                senddata = false;
+                else
+                {
+                    //second input port connected to curldevice
+                    Buffer* buf = input->GetFilledBuffer();
+                    if(text_break)
+                        text += " "+JSONToText(buf);
+                    else
+                        text = JSONToText(buf);
+                    VC_ALL("Got Text: %s",text.c_str());
+                    input->RecycleBuffer(buf);
+                }
             }
             else
             {
-                senddata = true;
-                m_flac->WriteData(buf->GetData(), buf->GetSamples());
-            }
-
-            m_input->RecycleBuffer(buf);
-        }
-        else
-        {
-            //wait condition
-            AutoMutex automutex(&m_mutex);
-            while (!m_input->IsBufferAvailable() && m_state)
-            {
-                m_cv.Wait();
+                //wait condition
+                AutoMutex automutex(&m_mutex);
+                while (!IsBufferAvailable() && m_state)
+                {
+                    m_cv.Wait();
+                }
             }
         }
     }
 }
 
+bool AudioProcessor::IsBufferAvailable()
+{
+    for (std::map<int, InputPort*>::iterator it = m_input_map.begin(); it != m_input_map.end(); it++)
+    {
+        if((*it).second->IsBufferAvailable())
+        {
+            return (true);
+        }
+    }
+    return (false);
+}

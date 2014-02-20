@@ -26,7 +26,7 @@ class TestDevice: public ADevice
 {
 public:
     TestDevice(std::string name) :
-        m_name(name),
+        ADevice(name),
         m_inport("Inputport 0", this),
         m_outport("Outport 0", this)
     {
@@ -71,13 +71,7 @@ public:
         return (VC_SUCCESS);
     }
 
-    const char* c_str()
-    {
-        return (m_name.c_str());
-    }
-
 private:
-    std::string m_name;
     InputPort m_inport;
     OutputPort m_outport;
 
@@ -95,6 +89,7 @@ TEST(ADeviceAPIs)
     CHECK(!!src->Input(0));
     CHECK(!!src->Output(0));
     CHECK_EQUAL(src->SendCommand(VC_CMD_START), VC_SUCCESS);
+    CHECK_EQUAL(src->SendCommand(VC_CMD_STOP), VC_SUCCESS);
 
     delete src;
 }
@@ -110,6 +105,15 @@ TEST(ADeviceConnections)
     CHECK_EQUAL(src->c_str(), "TestDevice Src");
     CHECK_EQUAL(dst->c_str(), "TestDevice Dst");
 
+    CHECK_EQUAL(pipe->DisconnectDevices(src, dst), VC_FAILURE);
+    CHECK_EQUAL(pipe->ConnectDevices(src, NULL), VC_FAILURE);
+    CHECK_EQUAL(pipe->ConnectDevices(NULL, NULL), VC_FAILURE);
+    CHECK_EQUAL(pipe->ConnectDevices(NULL, dst), VC_FAILURE);
+    CHECK_EQUAL(pipe->ConnectDevices(src, dst), VC_SUCCESS);
+    CHECK_EQUAL(pipe->ConnectDevices(src, dst), VC_FAILURE);
+    CHECK_EQUAL(pipe->DisconnectDevices(src, dst), VC_SUCCESS);
+    CHECK_EQUAL(pipe->DisconnectDevices(dst, src), VC_FAILURE);
+    CHECK_EQUAL(pipe->DisconnectDevices(NULL, NULL), VC_FAILURE);
     CHECK_EQUAL(pipe->ConnectDevices(src, dst), VC_SUCCESS);
     CHECK_EQUAL(pipe->DisconnectDevices(src, dst), VC_SUCCESS);
 
@@ -131,6 +135,7 @@ TEST(InputOutputPorts)
 
     CHECK_EQUAL(!!output->GetBuffer(), !!NULL);
     CHECK_EQUAL(pipe->ConnectPorts(input, output), VC_SUCCESS);
+    CHECK_EQUAL(pipe->ConnectPorts(input, output), VC_FAILURE);
     Buffer* buf = output->GetBuffer();
     CHECK(!!buf);
     CHECK_EQUAL(buf->WriteData((void* )"VoiceCommand", 12), VC_SUCCESS);
@@ -140,6 +145,7 @@ TEST(InputOutputPorts)
     CHECK(!memcmp(buf2->GetData(), "VoiceCommand", 12));
     CHECK_EQUAL(input->RecycleBuffer(buf2), VC_SUCCESS);
     CHECK_EQUAL(pipe->DisconnectPorts(input, output), VC_SUCCESS);
+    CHECK_EQUAL(pipe->DisconnectPorts(input, output), VC_FAILURE);
 
     delete pipe;
     delete input;
@@ -187,29 +193,21 @@ TEST(FileIOTEST)
     delete fsink;
 
     CHECK_EQUAL(fsrc->SendCommand(VC_CMD_START), VC_SUCCESS);
-    usleep(10000); //wait for thread to start
 
     //wait untill a buffer is pushed but source device
-    while (!input->IsBufferAvailable())
-        ;
+    while (!input->IsBufferAvailable());
     CHECK(input->IsBufferAvailable());
-
     buf = input->GetFilledBuffer();
     CHECK(!!buf);
-
     CHECK_EQUAL(buf->GetTag(), TAG_START);
     CHECK_EQUAL(input->RecycleBuffer(buf), VC_SUCCESS);
 
     //wait untill a buffer is pushed but source device
-    while (!input->IsBufferAvailable())
-        ;
-
+    while (!input->IsBufferAvailable());
     CHECK(input->IsBufferAvailable());
-
     buf = input->GetFilledBuffer();
     CHECK(!!buf);
     CHECK(!memcmp(buf->GetData(), "VoiceCommand", 12));
-
     CHECK_EQUAL(fsrc->SendCommand(VC_CMD_STOP), VC_SUCCESS);
     CHECK_EQUAL(pipe->DisconnectPorts(input, fsrc->Output(0)), VC_SUCCESS);
     delete fsrc;
@@ -230,5 +228,6 @@ TEST(FileIOTEST)
 }
 int main()
 {
+    DebugSetLevel(1);
     return (UnitTest::RunAllTests());
 }

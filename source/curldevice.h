@@ -32,19 +32,14 @@ class CURLDevice: public ADevice, public WorkerThread
 {
 public:
     CURLDevice(std::string name, const char* filename = "audio.flac");
-    ~CURLDevice();
+    virtual ~CURLDevice();
 
     virtual VC_STATUS Initialize();
     virtual VC_STATUS Notify(VC_EVENT* evt);
     virtual InputPort* Input(int portno);
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
-
     char* GetText();
-    const char* c_str()
-    {
-        return (m_name.c_str());
-    }
 
 private:
     virtual void Task();
@@ -55,12 +50,10 @@ private:
     struct curl_slist *m_header;
     char* m_buffer;
     struct curl_httppost* m_formpost;
-    std::string m_name;
     const char* m_filename;
     InputPort* m_input;
     OutputPort* m_output;
-    Mutex m_mutex;
-    ConditionVariable m_cv;
+
 };
 
 #endif /* CURL_H_ */

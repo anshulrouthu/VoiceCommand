@@ -45,7 +45,7 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name, const char* f
         return (new CaptureDevice(name));
         break;
     case VC_AUDIO_PROCESSOR:
-        return (new AudioProcessor(name));
+        return (new AudioProcessor(name, this));
         break;
     case VC_FLAC_DEVICE:
         return (new FLACDevice(name));
@@ -75,11 +75,11 @@ ADevice* APipe::GetDevice(VC_DEVICETYPE devtype, std::string name, const char* f
  * @param src source device
  * @param dst destination device
  */
-VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst)
+VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst, int src_portno, int dst_portno)
 {
     VC_TRACE("Enter");
     VC_CHECK(!src || !dst, return (VC_FAILURE), "Error: Null parameters");
-    return (ConnectPorts(dst->Input(0), src->Output(0)));
+    return (ConnectPorts(dst->Input(dst_portno), src->Output(src_portno)));
 }
 
 /**
@@ -87,11 +87,11 @@ VC_STATUS APipe::ConnectDevices(ADevice* src, ADevice* dst)
  * @param src source device
  * @param dst destination device
  */
-VC_STATUS APipe::DisconnectDevices(ADevice* src, ADevice* dst)
+VC_STATUS APipe::DisconnectDevices(ADevice* src, ADevice* dst, int src_portno, int dst_portno)
 {
     VC_TRACE("Enter");
     VC_CHECK(!src || !dst, return (VC_FAILURE), "Error: Null parameters");
-    return (DisconnectPorts(dst->Input(0), src->Output(0)));
+    return (DisconnectPorts(dst->Input(dst_portno), src->Output(src_portno)));
 }
 
 /**
@@ -254,7 +254,7 @@ VC_STATUS OutputPort::SetReceiver(InputPort* inport)
         return (VC_SUCCESS);
     }
     VC_ERR("Error: Cannot connect receiver");
-    return (VC_SUCCESS);
+    return (VC_FAILURE);
 }
 
 /**

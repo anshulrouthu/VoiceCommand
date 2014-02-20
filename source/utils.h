@@ -58,9 +58,10 @@ private:
     int m_level;
 };
 
-#define DBG_ALWAYS 0
-#define DBG_MESSAGE 1
-#define DBG_TRACE 2
+#define DBG_ALWAYS 1
+#define DBG_ERROR 2
+#define DBG_MESSAGE 3
+#define DBG_TRACE 4
 
 #define DBGPRINT(level,msg) vcDebug(level).DebugPrint msg
 
@@ -72,7 +73,7 @@ private:
 #define VC_ALL_STATIC(format, args...)  VC_DBG_STATIC(DBG_ALWAYS,  format, ##args)
 #define VC_TRACE_STATIC(format, args...)  VC_DBG_STATIC(DBG_TRACE,   format, ##args)
 #define VC_MSG_STATIC(format, args...)  VC_DBG_STATIC(DBG_MESSAGE,   format, ##args)
-#define VC_ERR_STATIC(format, args...)  VC_DBG_STATIC(DBG_ALWAYS,  format, ##args)
+#define VC_ERR_STATIC(format, args...)  VC_DBG_STATIC(DBG_ERROR,  format, ##args)
 #define VC_CHECK_STATIC(condition, fail, msg, args...)  \
 do                                      \
 {                                       \
@@ -86,8 +87,8 @@ do                                      \
 //To use the following debug macros, the class should implement c_str() method
 
 #define VC_DBG(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format "\n", __LINE__, c_str(), __FUNCTION__, ##args))
-#define VC_DBG_ERR(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format " in %s\n", __LINE__, c_str(), __FUNCTION__, ##args, __FILE__))
-#define VC_ERR(format, args...)  VC_DBG_ERR(DBG_ALWAYS,  format, ##args)
+#define VC_DBG_ERR(level, format, args...)  DBGPRINT(level, ("%-5d%s::%s() - " format " : %s\n", __LINE__, c_str(), __FUNCTION__, ##args, __FILE__))
+#define VC_ERR(format, args...)  VC_DBG_ERR(DBG_ERROR,  format, ##args)
 #define VC_ALL(format, args...)  VC_DBG(DBG_ALWAYS,  format, ##args)
 #define VC_MSG(format, args...)  VC_DBG(DBG_MESSAGE,   format, ##args)
 #define VC_TRACE(format, args...)  VC_DBG(DBG_TRACE,   format, ##args)

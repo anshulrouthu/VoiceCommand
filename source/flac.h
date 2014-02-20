@@ -49,26 +49,21 @@ public:
 
     int WriteData(void* data, int total_samples);
     VC_STATUS setParameters();
-    VC_STATUS InitiateFLACCapture();
-    VC_STATUS CloseFLACCapture();
+    VC_STATUS StartEncoder();
+    VC_STATUS StopEncoder();
 private:
     static void progress_callback(const FLAC__StreamEncoder *encoder, FLAC__uint64 bytes_written,
         FLAC__uint64 samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
     static FLAC__StreamEncoderWriteStatus write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[],
         size_t bytes, unsigned samples, unsigned current_frame, void *client_data);
 
-    const char* c_str()
-    {
-        return (m_name.c_str());
-    }
-
     FLAC__StreamEncoder* m_encoder;
     FLAC__StreamMetadata* m_metadata[2];
     const char* m_filename;
-    std::string m_name;
     ClientData m_cdata;
     InputPort* m_input;
     OutputPort* m_output;
+    bool m_ready;
 };
 
 #endif /* FLAC_H_ */

@@ -59,11 +59,6 @@ public:
     VC_STATUS GetCaptureDeviceList(char** list);
     VC_STATUS ThresholdSetup();
 
-    virtual const char* c_str()
-    {
-        return (m_name.c_str());
-    }
-
 private:
     virtual void Task();
     VC_STATUS OpenPlaybackDevice();
@@ -73,11 +68,8 @@ private:
     ALCdevice* m_playbackdev;
     ALCdevice* m_capturedev;
     bool m_running;
-    ConditionVariable m_cv;
     int m_threshold;
-    std::string m_name;
     Timer* m_timer;
-    Mutex m_mutex;
     InputPort* m_input;
     OutputPort* m_output;
 
