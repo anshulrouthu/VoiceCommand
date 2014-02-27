@@ -7,19 +7,18 @@ BIN=bin
 INCLUDE=
 LIBS= -lcurl -lboost_regex -lasound -lopenal -lFLAC -ljsoncpp -lUnitTest++
 TMP=tmp
-INC= -Isource/ -Itarget/include/
+INC=-Itarget/include/ -Isource/components/ -Isource/framework/
 LDPATH= -Ltarget/lib/
 
 #list of files containing main() function, to prevent conflicts while linking
-MAINFILES:=source/console_command.cpp    \
-           samples/sample-record.cpp     \
-           source/voiceCommand-old.cpp   \
-           samples/curlpost.cpp          \
-           source/tests/unittests.cpp    \
-           source/tests/test_flac.cpp    \
+MAINFILES:=source/main/console_command.cpp    \
+           samples/sample-record.cpp          \
+           samples/curlpost.cpp               \
+           source/tests/unittests.cpp         \
+           source/tests/test_flac.cpp         \
            source/tests/test_curl.cpp
            
-OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/*.cpp)))
+OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/components/*.cpp) $(wildcard source/framework/*.cpp)))
 
 ############ ----- build main application ----- ##############
 
@@ -31,8 +30,8 @@ all: bin $(OBJS) $(TARGET) sample tests
 bin: 
 	@mkdir -p $@
 	
-$(TARGET):source/console_command.o $(OBJS) 
-	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+$(TARGET):source/main/console_command.o $(OBJS) 
+	$(CC) $(CFLAGS) -O2 $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 ############ ----- build samples ----- ##############
 
@@ -45,7 +44,7 @@ sample: sample-record     \
 sample-record:samples/sample-record.o $(OBJS)
 	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
-voiceCommand-old: source/voiceCommand-old.o $(OBJS)
+voiceCommand-old: samples/voiceCommand-old.o $(OBJS)
 		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 curlpost: samples/curlpost.o $(OBJS)
@@ -76,4 +75,8 @@ unittests: source/tests/unittests.o $(OBJS)
 .PHONY: clean
 clean:
 	 @echo "Cleaning files..."
-	 @rm -f source/*.o samples/*.o source/tests/*.o
+	 @rm -f source/components/*.o           \
+	        source/framework/*.o            \
+	        source/main/*.o                 \
+	        samples/*.o                     \
+	        source/tests/*.o  

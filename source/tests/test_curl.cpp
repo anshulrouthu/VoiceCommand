@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 {
     APipe* pipe = new APipe("Pipe");
     ADevice* curl = pipe->GetDevice(VC_CURL_DEVICE, "CURL Device");
-    ADevice* filesrc = pipe->GetDevice(VC_FILESRC_DEVICE, "File Src", "FileSink.out");
+    ADevice* filesrc = pipe->GetDevice(VC_FILESRC_DEVICE, "File Src", argv[1]);
     ADevice* filesink = pipe->GetDevice(VC_FILESINK_DEVICE, "File Sink", "curlout.txt");
 
     curl->Initialize();

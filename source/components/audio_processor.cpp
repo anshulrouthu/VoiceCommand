@@ -288,7 +288,7 @@ int AudioProcessor::WriteData(void* data, int samples)
     FLAC__byte* buffer;
     buffer = (FLAC__byte*) data;
     size_t left = (size_t) samples;
-    FLAC__int32 pcm[READSIZE * 2];
+    FLAC__int32 pcm[READSIZE * NO_OF_CHANNELS];
 
     while (left)
     {
