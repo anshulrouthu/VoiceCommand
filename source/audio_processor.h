@@ -14,7 +14,6 @@
 #define AUDIO_PROCESSOR_H_
 
 #include "utils.h"
-#include "flac.h"
 #include "timer.h"
 #include <json/json.h>
 #include "buffer.h"
@@ -22,6 +21,12 @@
 #include "apipe.h"
 #include "curldevice.h"
 #include "mutex.h"
+#include "FLAC/metadata.h"
+#include "FLAC/stream_encoder.h"
+
+#define READSIZE 512
+#define SAMPLE_RATE 16000
+#define BITS_PER_SECOND 16
 
 class AudioProcessor: public WorkerThread, public ADevice
 {
@@ -37,19 +42,25 @@ public:
     virtual VC_STATUS SetParameters(const InputParams* params);
     virtual VC_STATUS GetParameters(OutputParams* params);
 
+private:
+    static FLAC__StreamEncoderWriteStatus write_callback(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[],
+        size_t bytes, unsigned samples, unsigned current_frame, void *client_data);
+    virtual void Task();
+    int WriteData(void* data, int total_samples);
+    VC_STATUS SetupEncoder();
+    VC_STATUS StopEncoder();
+    VC_STATUS StartEncoder();
     bool IsBufferAvailable();
     std::string JSONToText(Buffer* buf);
     VC_STATUS CloseDataProcessing(char* text);
-
-private:
-
-    virtual void Task();
     Json::Reader m_reader;
     char m_text[4 * 1024];
-    FLACDevice* m_flac;
-    CURLDevice* m_curl;
-    OutputPort* m_output;
-    std::map<int,InputPort*> m_input_map;
+    ADevice* m_curl;
+    std::map<int, InputPort*> m_input_map;
+    std::map<int, OutputPort*> m_output_map;
+    FLAC__StreamEncoder* m_encoder;
+    FLAC__StreamMetadata* m_metadata[2];
+    bool m_ready;
 };
 
 #endif /*AUDIO_PROCESSOR_H_*/

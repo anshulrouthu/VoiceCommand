@@ -56,6 +56,18 @@ int getch(void)
     return ch;
 }
 
+/**
+ * A utility function to convert int to string
+ * @param id
+ * @return string
+ */
+std::string ItoString(int id)
+{
+    std::ostringstream os;
+    os << id;
+    return (os.str());
+}
+
 vcDebug::vcDebug(int level) :
     m_level(level)
 {

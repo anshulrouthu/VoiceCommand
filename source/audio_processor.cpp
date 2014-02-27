@@ -11,13 +11,12 @@
  ***********************************************************/
 
 #include "audio_processor.h"
-#define NUM_OF_BUFFERS 128
 
 AudioProcessor::AudioProcessor(std::string name, APipe* pipe) :
     ADevice(name, pipe),
-    m_flac(NULL),
     m_curl(NULL),
-    m_output(NULL)
+    m_encoder(NULL),
+    m_ready(false)
 {
 }
 
@@ -32,22 +31,30 @@ AudioProcessor::~AudioProcessor()
 
     Join();
 
-    m_flac->SendCommand(VC_CMD_STOP);
     m_curl->SendCommand(VC_CMD_STOP);
 
-    m_pipe->DisconnectDevices(m_flac,m_curl);
-    m_pipe->DisconnectDevices(m_curl,this,0,1);
+    m_pipe->DisconnectDevices(this, m_curl, 1, 0);
+    m_pipe->DisconnectDevices(m_curl, this, 0, 1);
 
-    delete m_flac;
+    FLAC__metadata_object_delete(m_metadata[0]);
+    FLAC__metadata_object_delete(m_metadata[1]);
+    FLAC__stream_encoder_delete(m_encoder);
+
     delete m_curl;
-    delete m_output;
 
-    for (std::map<int, InputPort*>::iterator it = m_input_map.begin(); it != m_input_map.end(); it++)
+    //delete output ports
+    for (std::map<int, OutputPort*>::iterator it = m_output_map.begin(); it != m_output_map.end(); it++)
     {
         delete (*it).second;
         (*it).second = NULL;
     }
 
+    //delete input ports
+    for (std::map<int, InputPort*>::iterator it = m_input_map.begin(); it != m_input_map.end(); it++)
+    {
+        delete (*it).second;
+        (*it).second = NULL;
+    }
 
 }
 
@@ -56,23 +63,29 @@ AudioProcessor::~AudioProcessor()
  */
 VC_STATUS AudioProcessor::Initialize()
 {
-    m_flac = new FLACDevice("FlacDevice");
     m_curl = new CURLDevice("CurlDevice");
-    m_output = new OutputPort("Ouputport 0", this);
+
+    m_encoder = FLAC__stream_encoder_new();
+    VC_CHECK(m_encoder == NULL,, "Error: Unable to initialize FLAC encoder");
+    SetupEncoder();
 
     for (int i = 0; i < 2; i++)
     {
-        InputPort* m_input = new InputPort("Inputport_"+std::string((char*)&i), this);
+        InputPort* m_input = new InputPort("AudProc Input_" + ItoString(i), this);
         m_input_map[i] = m_input;
     }
 
-    m_flac->Initialize();
+    for (int i = 0; i < 2; i++)
+    {
+        OutputPort* m_output = new OutputPort("AudProc Output_" + ItoString(i), this);
+        m_output_map[i] = m_output;
+    }
+
     m_curl->Initialize();
 
-    m_pipe->ConnectDevices(m_flac,m_curl);
-    m_pipe->ConnectDevices(m_curl,this,0,1);
+    m_pipe->ConnectDevices(this, m_curl, 1, 0);
+    m_pipe->ConnectDevices(m_curl, this, 0, 1);
 
-    m_flac->SendCommand(VC_CMD_START);
     m_curl->SendCommand(VC_CMD_START);
 
     return (VC_SUCCESS);
@@ -93,7 +106,7 @@ InputPort* AudioProcessor::Input(int portno)
  */
 OutputPort* AudioProcessor::Output(int portno)
 {
-    return (m_output);
+    return (m_output_map[portno]);
 }
 
 /**
@@ -142,6 +155,9 @@ VC_STATUS AudioProcessor::GetParameters(OutputParams* params)
     return (VC_SUCCESS);
 }
 
+/**
+ * Method to convert json text to string
+ */
 std::string AudioProcessor::JSONToText(Buffer* buf)
 {
     Json::Value root;
@@ -150,7 +166,7 @@ std::string AudioProcessor::JSONToText(Buffer* buf)
     double confidence;
     char *cmd;
 
-    cmd = (char*)buf->GetData();
+    cmd = (char*) buf->GetData();
     if (cmd)
     {
         VC_CHECK(!m_reader.parse(cmd, root, true), return (""), "Error parsing text");
@@ -195,34 +211,41 @@ void AudioProcessor::Task()
                     switch (buf->GetTag())
                     {
                     case TAG_START:
-                        m_flac->StartEncoder();
+                        StartEncoder();
                         break;
                     case TAG_BREAK:
                         text_break = true;
-                        m_flac->StopEncoder();
-                        m_flac->StartEncoder();
+                        StopEncoder();
+                        StartEncoder();
                         break;
                     case TAG_END:
                         text_break = false;
-                        m_flac->StopEncoder();
+                        StopEncoder();
                         break;
                     case TAG_NONE:
-                        m_flac->WriteData(buf->GetData(), buf->GetSamples());
+                        WriteData(buf->GetData(), buf->GetSamples());
                         break;
                     default:
                         break;
                     }
+
                     input->RecycleBuffer(buf);
                 }
                 else
                 {
                     //second input port connected to curldevice
                     Buffer* buf = input->GetFilledBuffer();
-                    if(text_break)
-                        text += " "+JSONToText(buf);
+
+                    if (text_break)
+                    {
+                        text += " " + JSONToText(buf);
+                    }
                     else
+                    {
                         text = JSONToText(buf);
-                    VC_ALL("Got Text: %s",text.c_str());
+                    }
+
+                    VC_ALL("Got Text: %s", text.c_str());
                     input->RecycleBuffer(buf);
                 }
             }
@@ -239,14 +262,154 @@ void AudioProcessor::Task()
     }
 }
 
+/**
+ * Method to check is there is any buffer in any input port to be processed
+ */
 bool AudioProcessor::IsBufferAvailable()
 {
     for (std::map<int, InputPort*>::iterator it = m_input_map.begin(); it != m_input_map.end(); it++)
     {
-        if((*it).second->IsBufferAvailable())
+        if ((*it).second->IsBufferAvailable())
         {
             return (true);
         }
     }
     return (false);
+}
+
+/**
+ * Encode the raw pcm data
+ * @param[in] data raw pcm input data
+ * @param[in] samples number of samples
+ */
+int AudioProcessor::WriteData(void* data, int samples)
+{
+    VC_MSG("Enter");
+    FLAC__byte* buffer;
+    buffer = (FLAC__byte*) data;
+    size_t left = (size_t) samples;
+    FLAC__int32 pcm[READSIZE * 2];
+
+    while (left)
+    {
+        size_t need = (left > READSIZE ? (size_t) READSIZE : (size_t) left);
+        {
+            size_t i;
+            for (i = 0; i < need * NO_OF_CHANNELS; i++)
+            {
+                pcm[i] = (FLAC__int32) (((FLAC__int16) (FLAC__int8) buffer[2 * i + 1] << 8)
+                    | (FLAC__int16) buffer[2 * i]);
+            }
+            FLAC__stream_encoder_process_interleaved(m_encoder, pcm, need);
+        }
+        left -= need;
+        buffer += need * 2 * NO_OF_CHANNELS;
+    }
+
+    return (0);
+}
+
+/**
+ * Set parameters for the flac encoder
+ */
+VC_STATUS AudioProcessor::SetupEncoder()
+{
+    bool ok = true;
+    FLAC__StreamMetadata_VorbisComment_Entry entry;
+
+    ok &= FLAC__stream_encoder_set_verify(m_encoder, true);
+    ok &= FLAC__stream_encoder_set_compression_level(m_encoder, 5);
+    ok &= FLAC__stream_encoder_set_channels(m_encoder, NO_OF_CHANNELS);
+    ok &= FLAC__stream_encoder_set_bits_per_sample(m_encoder, BITS_PER_SECOND);
+    ok &= FLAC__stream_encoder_set_sample_rate(m_encoder, SAMPLE_RATE);
+
+    VC_CHECK(!ok, return (VC_FAILURE), "Failed to set FLAC parameters");
+
+    if (ok)
+    {
+        if ((m_metadata[0] = FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT)) == NULL || (m_metadata[1] =
+            FLAC__metadata_object_new(FLAC__METADATA_TYPE_PADDING)) == NULL
+            || !FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "ARTIST", "voiceCommand")
+            || !FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0], entry, /*copy=*/false) || /* copy=false: let metadata object take control of entry's allocated string */
+            !FLAC__metadata_object_vorbiscomment_entry_from_name_value_pair(&entry, "YEAR", "2014")
+            || !FLAC__metadata_object_vorbiscomment_append_comment(m_metadata[0], entry, /*copy=*/false))
+        {
+            VC_ERR("ERROR: out of memory or tag error");
+            return (VC_FAILURE);
+        }
+
+        m_metadata[1]->length = 1234; /* set the padding length */
+
+        FLAC__stream_encoder_set_metadata(m_encoder, m_metadata, 2);
+    }
+    return (VC_SUCCESS);
+}
+
+/**
+ * Stop encoding data
+ */
+VC_STATUS AudioProcessor::StopEncoder()
+{
+    VC_MSG("Enter");
+    if (!m_ready)
+    {
+        return (VC_SUCCESS);
+    }
+
+    FLAC__stream_encoder_finish(m_encoder);
+    Buffer* buf = Output(1)->GetBuffer();
+    if (buf)
+    {
+        buf->SetTag(TAG_END);
+        Output(1)->PushBuffer(buf);
+    }
+    m_ready = false;
+
+    return (VC_SUCCESS);
+}
+
+/**
+ * Start encoding data
+ */
+VC_STATUS AudioProcessor::StartEncoder()
+{
+    VC_MSG("Enter");
+    if (m_ready)
+    {
+        return (VC_SUCCESS);
+    }
+
+    FLAC__StreamEncoderInitStatus init_status;
+    SetupEncoder();
+    init_status = FLAC__stream_encoder_init_stream(m_encoder, this->write_callback, NULL, NULL, NULL, (void*) this);
+    VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",
+        FLAC__StreamEncoderInitStatusString[init_status]);
+
+    Buffer* buf = Output(1)->GetBuffer();
+    if (buf)
+    {
+        buf->SetTag(TAG_START);
+        Output(1)->PushBuffer(buf);
+    }
+
+    m_ready = true;
+
+    return (VC_SUCCESS);
+}
+
+/**
+ * Callback from flac encoder with the encoded data. This encoded data is to be sent to curl device
+ */
+FLAC__StreamEncoderWriteStatus AudioProcessor::write_callback(const FLAC__StreamEncoder *encoder,
+    const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data)
+{
+    ADevice* self = static_cast<AudioProcessor*>(client_data);
+    Buffer* buf = self->Output(1)->GetBuffer();
+    if (buf)
+    {
+        buf->WriteData((void*) buffer, bytes);
+        self->Output(1)->PushBuffer(buf);
+    }
+    return (FLAC__STREAM_ENCODER_WRITE_STATUS_OK);
+
 }

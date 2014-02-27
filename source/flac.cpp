@@ -82,15 +82,17 @@ OutputPort* FLACDevice::Output(int portno)
 VC_STATUS FLACDevice::StartEncoder()
 {
     VC_MSG("Enter");
-    if(m_ready)
+    if (m_ready)
     {
         return (VC_SUCCESS);
     }
 
     FLAC__StreamEncoderInitStatus init_status;
     setParameters();
-    init_status = FLAC__stream_encoder_init_stream(m_encoder, FLACDevice::write_callback, NULL, NULL, NULL, (void*) this);
-    VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s", FLAC__StreamEncoderInitStatusString[init_status]);
+    init_status = FLAC__stream_encoder_init_stream(m_encoder, FLACDevice::write_callback, NULL, NULL, NULL,
+        (void*) this);
+    VC_CHECK(init_status != FLAC__STREAM_ENCODER_INIT_STATUS_OK, return (VC_FAILURE), "ERROR: initializing encoder: %s",
+        FLAC__StreamEncoderInitStatusString[init_status]);
     Buffer* buf = m_output->GetBuffer();
     if (buf)
     {
@@ -106,7 +108,7 @@ VC_STATUS FLACDevice::StartEncoder()
 VC_STATUS FLACDevice::StopEncoder()
 {
     VC_MSG("Enter");
-    if(!m_ready)
+    if (!m_ready)
     {
         return (VC_SUCCESS);
     }
@@ -198,7 +200,7 @@ FLAC__StreamEncoderWriteStatus FLACDevice::write_callback(const FLAC__StreamEnco
 {
     FLACDevice* self = static_cast<FLACDevice*>(client_data);
     Buffer* buf = self->Output(0)->GetBuffer();
-    if(buf)
+    if (buf)
     {
         buf->WriteData((void*) buffer, bytes);
         self->Output(0)->PushBuffer(buf);

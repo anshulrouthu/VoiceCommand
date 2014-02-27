@@ -43,6 +43,7 @@
 void DebugSetLevel(int level);
 int kbhit(void);
 int getch(void);
+std::string ItoString(int id);
 
 /**
  * Debugging code: helps us in easy debugging of the application

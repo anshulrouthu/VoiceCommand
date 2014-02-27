@@ -195,7 +195,8 @@ TEST(FileIOTEST)
     CHECK_EQUAL(fsrc->SendCommand(VC_CMD_START), VC_SUCCESS);
 
     //wait untill a buffer is pushed but source device
-    while (!input->IsBufferAvailable());
+    while (!input->IsBufferAvailable())
+        ;
     CHECK(input->IsBufferAvailable());
     buf = input->GetFilledBuffer();
     CHECK(!!buf);
@@ -203,7 +204,8 @@ TEST(FileIOTEST)
     CHECK_EQUAL(input->RecycleBuffer(buf), VC_SUCCESS);
 
     //wait untill a buffer is pushed but source device
-    while (!input->IsBufferAvailable());
+    while (!input->IsBufferAvailable())
+        ;
     CHECK(input->IsBufferAvailable());
     buf = input->GetFilledBuffer();
     CHECK(!!buf);

@@ -200,13 +200,13 @@ public:
 /**
  * A Base class for all the Devices in the application
  */
-class ADevice : public BaseDevice
+class ADevice: public BaseDevice
 {
 public:
     /**
      * ADevice Constructor
      */
-    ADevice(std::string name, APipe* pipe = NULL):
+    ADevice(std::string name, APipe* pipe = NULL) :
         m_name(name),
         m_cv(m_mutex),
         m_pipe(pipe)
