@@ -211,6 +211,7 @@ void AudioProcessor::Task()
                     switch (buf->GetTag())
                     {
                     case TAG_START:
+                        text = "\0";
                         StartEncoder();
                         break;
                     case TAG_BREAK:

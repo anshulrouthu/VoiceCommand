@@ -42,7 +42,7 @@ WorkerThread::~WorkerThread()
 VC_STATUS WorkerThread::Start()
 {
     m_state = true;
-    int t = pthread_create(&m_handle, NULL, &WorkerThread::taskLauncher, (void*) this);
+    int t = OS_THREAD_CREATE(&m_handle, NULL, &WorkerThread::taskLauncher, (void*) this);
     VC_CHECK_STATIC(t != 0, return (VC_FAILURE), "Failed to create thread (error: %d)", t);
 
     return (VC_SUCCESS);
@@ -64,7 +64,7 @@ void* WorkerThread::taskLauncher(void* p)
  */
 int WorkerThread::Join()
 {
-    return (pthread_join(m_handle, NULL));
+    return (OS_THREAD_JOIN(&m_handle, NULL));
 }
 
 /**

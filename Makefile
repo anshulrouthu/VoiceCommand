@@ -7,7 +7,7 @@ BIN=bin
 INCLUDE=
 LIBS= -lcurl -lboost_regex -lasound -lopenal -lFLAC -ljsoncpp -lUnitTest++
 TMP=tmp
-INC=-Itarget/include/ -Isource/components/ -Isource/framework/
+INC=-Itarget/include/ -Isource/components/ -Isource/framework/ -Isource/osapi/
 LDPATH= -Ltarget/lib/
 
 #list of files containing main() function, to prevent conflicts while linking
@@ -18,7 +18,7 @@ MAINFILES:=source/main/console_command.cpp    \
            source/tests/test_flac.cpp         \
            source/tests/test_curl.cpp
            
-OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/components/*.cpp) $(wildcard source/framework/*.cpp)))
+OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/components/*.cpp) $(wildcard source/framework/*.cpp) $(wildcard source/osapi/*.cpp)))
 
 ############ ----- build main application ----- ##############
 

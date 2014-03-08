@@ -20,9 +20,9 @@
 #ifndef MUTEX_H_
 #define MUTEX_H_
 
-#include <pthread.h>
-#include<sys/time.h>
+#include <sys/time.h>
 #include "utils.h"
+#include "osapi.h"
 
 #define WAIT_FOREVER -1
 static int const NSEC_PER_SEC = 1000000000;
@@ -40,7 +40,7 @@ public:
     int Unlock();
     int TryLock();
 private:
-    pthread_mutex_t m_mutex;
+    OS_MUTEX m_mutex;
 
 };
 
@@ -55,7 +55,7 @@ public:
     int Notify();
     int Wait(int millisconds = WAIT_FOREVER);
 private:
-    pthread_cond_t m_condition;
+    OS_COND m_condition;
     Mutex& m_mutex;
 };
 

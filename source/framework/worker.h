@@ -26,8 +26,8 @@
 #ifndef WORKER_THREAD_H_
 #define WORKER_THREAD_H_
 
-#include<pthread.h>
-#include<sys/time.h>
+#include "osapi.h"
+#include <sys/time.h>
 #include "utils.h"
 
 /**
@@ -45,7 +45,7 @@ private:
 
     virtual void Task()=0;
     static void* taskLauncher(void* args);
-    pthread_t m_handle;
+    OS_THREAD_HANDLE m_handle;
 
 protected:
     bool m_state;

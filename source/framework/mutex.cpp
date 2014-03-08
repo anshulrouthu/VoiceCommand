@@ -24,7 +24,7 @@
  */
 Mutex::Mutex()
 {
-    pthread_mutex_init(&m_mutex, NULL);
+    OS_MUTEX_INIT(&m_mutex, NULL);
 }
 
 /**
@@ -32,7 +32,7 @@ Mutex::Mutex()
  */
 Mutex::~Mutex()
 {
-    pthread_mutex_destroy(&m_mutex);
+    OS_MUTEX_DESTROY(&m_mutex);
 }
 
 /**
@@ -41,7 +41,7 @@ Mutex::~Mutex()
  */
 int Mutex::Lock()
 {
-    return (pthread_mutex_lock(&m_mutex));
+    return (OS_MUTEX_LOCK(&m_mutex));
 }
 
 /**
@@ -50,7 +50,7 @@ int Mutex::Lock()
  */
 int Mutex::Unlock()
 {
-    return (pthread_mutex_unlock(&m_mutex));
+    return (OS_MUTEX_UNLOCK(&m_mutex));
 }
 
 /**
@@ -59,7 +59,7 @@ int Mutex::Unlock()
  */
 int Mutex::TryLock()
 {
-    return (pthread_mutex_trylock(&m_mutex));
+    return (OS_MUTEX_TRYLOCK(&m_mutex));
 }
 
 /**
@@ -69,7 +69,7 @@ int Mutex::TryLock()
 ConditionVariable::ConditionVariable(Mutex& mutex) :
     m_mutex(mutex)
 {
-    pthread_cond_init(&m_condition, NULL);
+    OS_COND_INIT(&m_condition, NULL);
 }
 
 /**
@@ -77,7 +77,7 @@ ConditionVariable::ConditionVariable(Mutex& mutex) :
  */
 ConditionVariable::~ConditionVariable()
 {
-    pthread_cond_destroy(&m_condition);
+    OS_COND_DESTROY(&m_condition);
 }
 
 /**
@@ -89,7 +89,7 @@ int ConditionVariable::Wait(int milliseconds)
 {
     if (milliseconds == WAIT_FOREVER)
     {
-        return (pthread_cond_wait(&m_condition, &m_mutex.m_mutex));
+        return (OS_COND_WAIT(&m_condition, &m_mutex.m_mutex));
     }
     else
     {
@@ -108,7 +108,7 @@ int ConditionVariable::Wait(int milliseconds)
             abstime.tv_nsec -= NSEC_PER_SEC;
         }
 
-        return (pthread_cond_timedwait(&m_condition, &m_mutex.m_mutex, &abstime));
+        return (OS_COND_TIMEDWAIT(&m_condition, &m_mutex.m_mutex, &abstime));
     }
 }
 
@@ -118,7 +118,7 @@ int ConditionVariable::Wait(int milliseconds)
  */
 int ConditionVariable::Notify()
 {
-    return (pthread_cond_signal(&m_condition));
+    return (OS_COND_SIGNAL(&m_condition));
 }
 
 /**
