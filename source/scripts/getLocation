@@ -1,7 +1,0 @@
-#!/bin/bash
-if [ $1 = "location" ]; then
-tmp=$(wget -q -O - "http://api.ipinfodb.com/v3/ip-city/?key=f810d310fb2f188466c689d205ce4bf415fe165d600f07e0a8403abb738fce1a&format=json" | sed -e 's/[",{} ]/''/g') 
-echo $tmp
-else
-echo $(wget -q -O - "http://api.ipinfodb.com/v3/ip-city/?key=f810d310fb2f188466c689d205ce4bf415fe165d600f07e0a8403abb738fce1a&format=json" | sed -e 's/[",]/''/g' | grep -i $1 | awk -F: '{print $2}')
-fi
