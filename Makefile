@@ -60,8 +60,9 @@ curlpost_callback: samples/curlpost_callback.o $(OBJS)
 
 .PHONY: tests
 tests: unittests      \
-	   test_flac      \
-	   test_curl
+       test_flac      \
+       test_curl      \
+       test_osapi
 
 test_curl: source/tests/test_curl.o $(OBJS)
 	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
@@ -71,6 +72,9 @@ test_flac: source/tests/test_flac.o $(OBJS)
 	   	
 unittests: source/tests/unittests.o $(OBJS)
 	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+
+test_osapi: source/tests/test_osapi.o $(OBJS)
+	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: clean
 clean:
