@@ -168,43 +168,47 @@ VC_STATUS AudioProcessor::GetParameters(OutputParams* params)
 /**
  * Method to convert json text to string
  */
-std::string AudioProcessor::JSONToText(Buffer* buf)
+VC_STATUS AudioProcessor::JSONToText(Buffer* buf, std::string& text)
 {
     Json::Value root;
-    Json::Value hypotheses;
-    std::string utterance;
-    double confidence;
+    Json::Value result;
+    Json::Value alternative;
+    std::string transcript;
+    double confidence = -1;
     char *cmd;
 
     cmd = (char*) buf->GetData();
-    if (cmd)
+
+    if (strlen(cmd))
     {
-        VC_CHECK(!m_reader.parse(cmd, root, true), return (""), "Error parsing text");
+        VC_CHECK(!m_reader.parse(cmd, root), return (VC_FAILURE), "Error parsing text");
 
-        hypotheses = root["hypotheses"][(unsigned int) (0)];
-
-        if (hypotheses["confidence"].isDouble())
+        result = root["result"];
+        if (result.isArray() && result.size())
         {
-            confidence = hypotheses["confidence"].asDouble();
-            VC_MSG("Confidence %f", confidence);
-        }
+            result = result[(uint)0];
+            alternative = result["alternative"];
+            if (alternative.isArray())
+            {
+                alternative = alternative[(uint)0];
+                transcript = alternative["transcript"].asString();
+                confidence = alternative["confidence"].asDouble();
 
-        if (confidence > 0.7 && hypotheses["utterance"].isString())
-        {
-            utterance = hypotheses["utterance"].asString();
-            cmd[0] = '\0';
-            VC_MSG("\n\tUtterance: %s\n\tConfidence: %f", utterance.c_str(), confidence);
-            return (utterance);
+                if(confidence < 0 || (confidence > 0 && confidence > 0.7))
+                {
+                    text = transcript;
+                    return (VC_SUCCESS);
+                }
+            }
         }
     }
 
-    return ("");
+    return (VC_FAILURE);
 }
 
 void AudioProcessor::Task()
 {
     VC_MSG("Enter");
-    bool text_break = false;
     std::string text = "";
     while (m_state)
     {
@@ -225,12 +229,13 @@ void AudioProcessor::Task()
                         StartEncoder();
                         break;
                     case TAG_BREAK:
-                        text_break = true;
-                        StopEncoder();
-                        StartEncoder();
+                    {
+                        Buffer* b = Output(1)->GetBuffer();
+                        b->SetTag(buf->GetTag());
+                        Output(1)->PushBuffer(b);
+                    }
                         break;
                     case TAG_END:
-                        text_break = false;
                         StopEncoder();
                         break;
                     case TAG_NONE:
@@ -247,16 +252,11 @@ void AudioProcessor::Task()
                     //second input port connected to curldevice
                     Buffer* buf = input->GetFilledBuffer();
 
-                    if (text_break)
+                    if (JSONToText(buf, text) == VC_SUCCESS)
                     {
-                        text += " " + JSONToText(buf);
-                    }
-                    else
-                    {
-                        text = JSONToText(buf);
+                        VC_ALL("Got Text: %s", text.c_str());
                     }
 
-                    VC_ALL("Got Text: %s", text.c_str());
                     input->RecycleBuffer(buf);
                 }
             }

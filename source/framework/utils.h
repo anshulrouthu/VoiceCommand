@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stddef.h>
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
 #include <sstream>
@@ -48,7 +48,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NULL   ((void *) 0)
 #endif
 
-#define NO_OF_CHANNELS 1
+#define NO_OF_CHANNELS 2
 
 void DebugSetLevel(int level);
 int kbhit(void);
@@ -141,13 +141,22 @@ typedef enum
 
 typedef enum
 {
-    VC_FAILURE = 0, VC_SUCCESS, VC_NOT_IMPLEMENTED, VC_UNDEFINED
+    VC_FAILURE = 0,
+    VC_SUCCESS,
+    VC_NOT_IMPLEMENTED,
+    VC_UNDEFINED
 } VC_STATUS;
 
 typedef enum
 {
-    TAG_NONE = 0, TAG_START, TAG_BREAK, TAG_END, TAG_EOF
+    TAG_NONE = 0,
+    TAG_START,
+    TAG_BREAK,
+    TAG_END,
+    TAG_EOS
 } BUF_TAG;
+
+const char* ConvertTagToString(BUF_TAG tag);
 
 template<typename T>
 void write(std::ofstream& stream, const T& t)

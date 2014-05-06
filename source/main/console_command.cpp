@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 {
     int c;
     int threshold = 1500;
-    bool autosetup = false, filecapture = false;
+    bool filecapture = false;
     ADevice* src;
     ADevice* sink;
     while ((c = getopt(argc, argv, "sf?l:d:t:")) != -1)
@@ -53,7 +53,6 @@ int main(int argc, char* argv[])
             exit(0);
             break;
         case 's':
-            autosetup = true;
             break;
         case 't':
             threshold = (int) strtol(optarg, NULL, 10);

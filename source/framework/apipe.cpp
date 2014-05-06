@@ -136,7 +136,8 @@ VC_STATUS APipe::DisconnectPorts(InputPort* input, OutputPort* output)
  */
 InputPort::InputPort(std::string name, ADevice* device) :
     m_name(name),
-    m_device(device)
+    m_device(device),
+    m_queue_cv(m_queue_mutex)
 {
     for (int i = 0; i < NUM_OF_BUFFERS; i++)
     {
@@ -147,7 +148,14 @@ InputPort::InputPort(std::string name, ADevice* device) :
 
 InputPort::~InputPort()
 {
+    AutoMutex automutex(&m_queue_mutex);
+
     for (std::list<Buffer*>::iterator it = m_buffers.begin(); it != m_buffers.end(); it++)
+    {
+        delete *it;
+    }
+
+    for (std::list<Buffer*>::iterator it = m_processbuf.begin(); it != m_processbuf.end(); it++)
     {
         delete *it;
     }
@@ -177,12 +185,12 @@ Buffer* InputPort::GetFilledBuffer()
  */
 Buffer* InputPort::GetEmptyBuffer()
 {
-    VC_TRACE("Enter");
-
+    AutoMutex automutex(&m_queue_mutex);
     while (m_buffers.size() == 0)
     {
         //this should not happen or we starve for buffer
-        VC_ERR("Low on Buffers");
+        VC_ERR("Waiting for buffers");
+        m_queue_cv.Wait();
     }
 
     Buffer* buf = m_buffers.front();
@@ -198,8 +206,10 @@ Buffer* InputPort::GetEmptyBuffer()
 VC_STATUS InputPort::RecycleBuffer(Buffer* buf)
 {
     VC_TRACE("Enter");
+    AutoMutex automutex(&m_queue_mutex);
     buf->Reset();
     m_buffers.push_back(buf);
+    m_queue_cv.Notify();
     return (VC_SUCCESS);
 }
 

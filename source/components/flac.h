@@ -42,7 +42,7 @@ typedef struct client_data
 } ClientData;
 
 #define READSIZE 512
-#define SAMPLE_RATE 16000
+#define ENCODING_SAMPLE_RATE 44100
 #define BITS_PER_SECOND 16
 
 class FLACDevice: public ADevice

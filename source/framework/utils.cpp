@@ -66,6 +66,20 @@ int getch(void)
     return ch;
 }
 
+const char* ConvertTagToString(BUF_TAG tag)
+{
+    switch(tag)
+    {
+    case TAG_NONE: return ("TAG_NONE"); break;
+    case TAG_START: return ("TAG_START"); break;
+    case TAG_BREAK: return ("TAG_BREAK"); break;
+    case TAG_END: return ("TAG_END"); break;
+    case TAG_EOS: return ("TAG_EOS"); break;
+    }
+
+    return (NULL);
+}
+
 /**
  * A utility function to convert int to string
  * @param id

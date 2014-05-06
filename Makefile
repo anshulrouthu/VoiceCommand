@@ -1,5 +1,5 @@
 
-CFLAGS=-Wall -g -O2
+CFLAGS=-Wall -Werror -g -O2
 TARGET=voiceCommand
 SRC=./source
 SAMPLES=./samples/*.cpp
@@ -23,8 +23,7 @@ OBJS:=$(patsubst %.cpp, %.o, $(filter-out $(MAINFILES),$(wildcard source/compone
 ############ ----- build main application ----- ##############
 
 .PHONY: all
-all: bin $(OBJS) $(TARGET) sample tests
-	@cp $(SRC)/scripts/* $(BIN)/
+all: bin $(OBJS) $(TARGET) tests
 	@echo "Build successful"
 
 bin: 
@@ -94,3 +93,12 @@ clean:
 	        source/main/*.o                 \
 	        samples/*.o                     \
 	        source/tests/*.o  
+.PHONY: distclean
+distclean:
+	 @echo "Cleaning files..."
+	 @rm -f source/components/*.o           \
+	        source/framework/*.o            \
+	        source/main/*.o                 \
+	        samples/*.o                     \
+	        source/tests/*.o                \
+		$(BIN)/*

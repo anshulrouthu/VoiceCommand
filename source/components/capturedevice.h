@@ -43,7 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "timer.h"
 #include "mutex.h"
 
-#define SAMPLE_RATE 16000
+#define CAPTURE_SAMPLE_RATE 44100
 
 /**
  * Capture Device Class that captures audio data continuously.

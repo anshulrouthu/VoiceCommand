@@ -144,7 +144,7 @@ VC_STATUS FLACDevice::setParameters()
     ok &= FLAC__stream_encoder_set_compression_level(m_encoder, 5);
     ok &= FLAC__stream_encoder_set_channels(m_encoder, NO_OF_CHANNELS);
     ok &= FLAC__stream_encoder_set_bits_per_sample(m_encoder, BITS_PER_SECOND);
-    ok &= FLAC__stream_encoder_set_sample_rate(m_encoder, SAMPLE_RATE);
+    ok &= FLAC__stream_encoder_set_sample_rate(m_encoder, ENCODING_SAMPLE_RATE);
 
     VC_CHECK(!ok, return (VC_FAILURE), "Failed to set FLAC parameters");
 

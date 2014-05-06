@@ -36,6 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "worker.h"
 
 #define VC_SPEECH_ENGINE "https://www.google.com/speech-api/v1/recognize?xjerr=1&client=chromium&pfilter=0&maxresults=1&lang=\"en-US\""
+#define VC_SPEECH_ENGINEV2 "https://www.google.com/speech-api/v2/recognize?output=json&key=AIzaSyCnl6MRydhw_5fLXIdASxkLJzcJh5iX0M4&client=chromium&pfilter=0&maxresults=1&lang=\"en-us\""
+
 #define VC_AUDIO_FILENAME "audio.flac"
 
 class CURLDevice: public ADevice, public WorkerThread
@@ -49,20 +51,18 @@ public:
     virtual InputPort* Input(int portno);
     virtual OutputPort* Output(int portno);
     virtual VC_STATUS SendCommand(VC_CMD cmd);
-    char* GetText();
 
 private:
     virtual void Task();
     static size_t Write_callback(void *buffer, size_t size, size_t n, void *ptr);
     static size_t read_callback(void *buffer, size_t size, size_t n, void *ptr);
-    static size_t WriteData(void *buffer, size_t size, size_t n, void *ptr);
     CURL* m_curl;
     struct curl_slist *m_header;
-    char* m_buffer;
     struct curl_httppost* m_formpost;
     const char* m_filename;
     InputPort* m_input;
     OutputPort* m_output;
+    Buffer* m_buffer;
 
 };
 

@@ -61,7 +61,7 @@ private:
     VC_STATUS StopEncoder();
     VC_STATUS StartEncoder();
     bool IsBufferAvailable();
-    std::string JSONToText(Buffer* buf);
+    VC_STATUS JSONToText(Buffer* buf, std::string& text);
     VC_STATUS CloseDataProcessing(char* text);
     Json::Reader m_reader;
     char m_text[4 * 1024];

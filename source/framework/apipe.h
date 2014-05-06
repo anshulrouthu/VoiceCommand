@@ -63,6 +63,7 @@ private:
     std::string m_name;
     ADevice* m_device;
     Mutex m_queue_mutex;
+    ConditionVariable m_queue_cv;
 
 };
 

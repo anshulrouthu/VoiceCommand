@@ -196,7 +196,7 @@ VC_STATUS CaptureDevice::OpenCaptureDevice()
 {
     VC_MSG("Enter");
 
-    m_capturedev = alcCaptureOpenDevice(NULL, SAMPLE_RATE, AL_FORMAT_MONO16, 800);
+    m_capturedev = alcCaptureOpenDevice(NULL, CAPTURE_SAMPLE_RATE, AL_FORMAT_STEREO16, 10000);
 
     VC_CHECK(m_capturedev == NULL, return (VC_FAILURE), "Unable to open capture device!");
     VC_TRACE("opened device %s", GetCaptureDevice());
@@ -303,14 +303,14 @@ void CaptureDevice::Task()
                 {
                     total_samples = 0;
                     AutoMutex automutex(&m_mutex);
-                    m_cv.Wait(50);
+                    m_cv.Wait(10);
                 }
 
                 /**
                  * If enough samples are captured send the break tag to process the data
                  * till now and get a new set of fresh data TODO: find the avg value to be check for
                  */
-                if (total_samples > 15000 && (avg_amplitude < m_threshold * 3 / 8))
+                if (total_samples > 15000 && (avg_amplitude < m_threshold * 1/2))
                 {
                     Buffer* b = m_output->GetBuffer();
                     b->SetTag(TAG_BREAK);
@@ -338,7 +338,7 @@ void CaptureDevice::Task()
             else /* if there are no samples wait 50 ms*/
             {
                 AutoMutex automutex(&m_mutex);
-                m_cv.Wait(50);
+                m_cv.Wait(1);
             }
         }
     }

@@ -33,15 +33,16 @@ CURLDevice::CURLDevice(std::string name, const char* filename) :
     ADevice(name),
     m_header(NULL),
     m_formpost(NULL),
-    m_filename(filename)
+    m_filename(filename),
+    m_buffer(NULL)
 {
     curl_global_init(CURL_GLOBAL_ALL);
     m_curl = curl_easy_init();
 
     VC_CHECK(m_curl == NULL,, "Error Initializing Curl");
-    m_header = curl_slist_append(m_header, "Content-type: audio/x-flac; rate=16000");
+    m_header = curl_slist_append(m_header, "Content-type: audio/x-flac; rate=44100");
+    m_header = curl_slist_append(m_header, "Transfer-Encoding: chunked");
 
-    m_buffer = (char*) malloc(400);
 }
 
 CURLDevice::~CURLDevice()
@@ -58,8 +59,6 @@ CURLDevice::~CURLDevice()
     curl_easy_cleanup(m_curl);
     curl_slist_free_all(m_header);
     curl_formfree(m_formpost);
-    if (m_buffer)
-        free(m_buffer);
 
     delete m_input;
     delete m_output;
@@ -72,10 +71,7 @@ VC_STATUS CURLDevice::Initialize()
     m_input = new InputPort("Curl Input", this);
     m_output = new OutputPort("Curl Output", this);
 
-    //m_header = curl_slist_append(m_header, "Content-type: audio/x-flac; rate=16000");
-    m_header = curl_slist_append(m_header, "Transfer-Encoding: chunked");
-
-    curl_easy_setopt(m_curl, CURLOPT_URL, VC_SPEECH_ENGINE);
+    curl_easy_setopt(m_curl, CURLOPT_URL, VC_SPEECH_ENGINEV2);
     curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_header);
     curl_easy_setopt(m_curl, CURLOPT_POST, 1L);
     curl_easy_setopt(m_curl, CURLOPT_READFUNCTION, CURLDevice::read_callback);
@@ -128,7 +124,21 @@ void CURLDevice::Task()
             Buffer* buf = m_input->GetFilledBuffer();
             if (buf->GetTag() == TAG_START)
             {
+                m_buffer = Output(0)->GetBuffer();
                 VC_CHECK(curl_easy_perform(m_curl) != CURLE_OK,, "Error requesting command");
+
+                char* str = strstr((char*) m_buffer->GetData(), "\n") + 1;
+
+                if (str)
+                {
+                    m_buffer->Reset();
+                    m_buffer->WriteData((void*) str, strlen(str));
+                    m_buffer->WriteData((char*)"\0",1);
+                }
+
+                VC_MSG("Received Json Text: %s", m_buffer->GetData());
+                Output(0)->PushBuffer(m_buffer);
+                m_buffer = NULL;
             }
             m_input->RecycleBuffer(buf);
         }
@@ -143,46 +153,12 @@ void CURLDevice::Task()
     }
 }
 
-char* CURLDevice::GetText()
-{
-    VC_MSG("Enter");
-    struct curl_httppost *lastptr = NULL;
-    curl_formadd(&m_formpost, &lastptr, CURLFORM_COPYNAME, "sendfile", CURLFORM_FILE, "audio.flac", CURLFORM_END);
-
-    curl_easy_setopt(m_curl, CURLOPT_URL, VC_SPEECH_ENGINE);
-    curl_easy_setopt(m_curl, CURLOPT_HTTPHEADER, m_header);
-    curl_easy_setopt(m_curl, CURLOPT_HTTPPOST, m_formpost);
-    curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, CURLDevice::WriteData);
-    curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, (void* )m_buffer);
-    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 0);
-    VC_CHECK(curl_easy_perform(m_curl) != CURLE_OK, return (NULL), "Error requesting command");
-
-    return (m_buffer);
-
-}
-
-size_t CURLDevice::WriteData(void* buffer, size_t size, size_t n, void* ptr)
-{
-    DBG_PRINT(DBG_TRACE, "Enter %d", size * n);
-    //memcpy(ptr,buffer,size*n);
-    strcpy((char*) ptr, (char*) buffer);
-    DBG_PRINT(DBG_TRACE, "Command Data %s", (char* )buffer);
-    return (size * n);
-}
-
 size_t CURLDevice::Write_callback(void* buffer, size_t size, size_t n, void* ptr)
 {
     VC_TRACE_STATIC("Enter");
 
     CURLDevice* self = static_cast<CURLDevice*>(ptr);
-    Buffer* buf = self->Output(0)->GetBuffer();
-    if (buf)
-    {
-        buf->WriteData(buffer, size * n);
-        self->Output(0)->PushBuffer(buf);
-    }
-
-    VC_MSG_STATIC("Received Json Text %s", (char* )buffer);
+    self->m_buffer->WriteData(buffer, size * n);
 
     return (size * n);
 }
@@ -209,7 +185,7 @@ size_t CURLDevice::read_callback(void *buffer, size_t size, size_t n, void *ptr)
     {
         if (buf->GetTag() == TAG_END || buf->GetTag() == TAG_BREAK)
         {
-            DBGPRINT(DBG_ALWAYS, ("Received TAG_EOS\n"));
+            DBGPRINT(DBG_MESSAGE, ("%s Received %s\n",__FUNCTION__, ConvertTagToString(buf->GetTag())));
             return (0);
         }
 

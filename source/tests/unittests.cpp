@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "utils.h"
-#include <UnitTest++/UnitTest++.h>
+#include "UnitTest++/UnitTest++.h"
 #include "apipe.h"
 #include "file_io.h"
 
@@ -227,7 +227,8 @@ TEST(FileIOTEST)
     FILE* fp;
     char c[12];
     fp = fopen("FileSink.out", "rb");
-    fread(c, 1, 12, fp);
+    int size = fread(c, 1, 12, fp);
+    CHECK_EQUAL(size,12);
     CHECK(!memcmp(c, "VoiceCommand", 12));
 
     fclose(fp);

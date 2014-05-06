@@ -20,13 +20,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
-/*
- * buffer.cpp
- *
- *  Created on: Jan 28, 2014
- *      Author: anshul
- */
-
 #include "buffer.h"
 
 Buffer::Buffer(size_t size) :
@@ -34,28 +27,26 @@ Buffer::Buffer(size_t size) :
     m_tag(TAG_NONE),
     m_samples(0)
 {
-    m_data = malloc(size);
+    m_data = (unsigned char*)malloc(size);
     VC_CHECK(m_data == NULL,, "Error allocating buffer");
 }
 
 Buffer::~Buffer()
 {
-    if (m_data)
-    {
-        free(m_data);
-        m_data = NULL;
-    }
+    free(m_data);
+    m_data = NULL;
 }
 
-void* Buffer::GetData()
+unsigned char* Buffer::GetData()
 {
     return (m_data);
 }
 
 VC_STATUS Buffer::WriteData(void* buf, size_t size)
 {
-    VC_CHECK(!memcpy(m_data, buf, size), return VC_FAILURE, "Error writing data to buffer");
-    m_size = size;
+    VC_CHECK(m_size >= VC_BUFFER_MAXSIZE, return (VC_FAILURE), "Error: Buffer full");
+    VC_CHECK(!memcpy(m_data + m_size, buf, size), return (VC_FAILURE), "Error writing data to buffer");
+    m_size += size;
     return (VC_SUCCESS);
 }
 
