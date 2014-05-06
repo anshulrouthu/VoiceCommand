@@ -1,5 +1,5 @@
 
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -O2
 TARGET=voiceCommand
 SRC=./source
 SAMPLES=./samples/*.cpp
@@ -31,7 +31,16 @@ bin:
 	@mkdir -p $@
 	
 $(TARGET):source/main/console_command.o $(OBJS) 
-	$(CC) $(CFLAGS) -O2 $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	@echo "Linking... $@"
+	@$(CXX) $(CFLAGS) -O2 $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+
+%.o: %.cpp
+	@echo "[CXX] $@"
+	@$(CXX) $(CFLAGS) $(INC) -c $< -o $@
+
+%.o: %.c
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 ############ ----- build samples ----- ##############
 
@@ -42,19 +51,16 @@ sample: sample-record     \
         curlpost_callback      
 
 sample-record:samples/sample-record.o $(OBJS)
-	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	     $(CXX) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 voiceCommand-old: samples/voiceCommand-old.o $(OBJS)
-		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+		$(CXX) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 curlpost: samples/curlpost.o $(OBJS)
-		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+		$(CXX) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 		
 curlpost_callback: samples/curlpost_callback.o $(OBJS)
-		$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
-						   	
-%.o: %.cpp
-	$(CC) $(CFLAGS) $(INC) -c $< -o $@
+		$(CXX) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 			
 ############ ----- build tests ----- ##############
 
@@ -65,16 +71,20 @@ tests: unittests      \
        test_osapi
 
 test_curl: source/tests/test_curl.o $(OBJS)
-	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	   @echo "Linking... $@"
+	   @$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 	   	
 test_flac: source/tests/test_flac.o $(OBJS)
-	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	   @echo "Linking... $@"
+	   @$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 	   	
 unittests: source/tests/unittests.o $(OBJS)
-	   	$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	   @echo "Linking... $@"
+	   @$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 test_osapi: source/tests/test_osapi.o $(OBJS)
-	     $(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
+	    @echo "Linking... $@"
+	    @$(CC) $(CFLAGS) $(LDPATH) $^ -o $(BIN)/$@ $(LIBS)
 
 .PHONY: clean
 clean:

@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "utils.h"
-#include <UnitTest++.h>
+#include <UnitTest++/UnitTest++.h>
 #include "apipe.h"
 #include "file_io.h"
 
